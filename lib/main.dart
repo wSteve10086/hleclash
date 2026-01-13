@@ -21,19 +21,6 @@ import 'package:fl_clash/firebase_options.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   /// 获取baseurl
-  // final cloudRequest = CloudRequest();
-  // await cloudRequest.refreshBaseUrl();
-  //
-  // final version = await system.version;
-  // await globalState.initApp(version);
-  // HttpOverrides.global = FlClashHttpOverrides();
-  //
-  // await initLoginState();
-  // if (Platform.isAndroid || Platform.isMacOS) {
-  //   await initFirebaseOnce();
-  //   FirebaseAnalytics.instance;
-  // }
-
   final cloudRequest = CloudRequest();
   final versionFuture = system.version;
   final refreshBaseUrlFuture = cloudRequest.refreshBaseUrl();
@@ -47,7 +34,6 @@ Future<void> main() async {
 
   final version = await versionFuture;
   await globalState.initApp(version);
-
   HttpOverrides.global = FlClashHttpOverrides();
   if (Platform.isAndroid || Platform.isMacOS) {
     Future(() async {
@@ -55,12 +41,6 @@ Future<void> main() async {
       FirebaseAnalytics.instance;
     });
   }
-  // if (Platform.isAndroid || Platform.isMacOS) {
-  //   // Firebase 初始化可以单独 await
-  //   await initFirebaseOnce();
-  //   FirebaseAnalytics.instance;
-  // }
-
 
   runApp(ProviderScope(child: const Application()));
 }

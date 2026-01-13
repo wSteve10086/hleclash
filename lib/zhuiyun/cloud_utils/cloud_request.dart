@@ -34,6 +34,8 @@ class CloudRequest {
       "https://pub-d51a46c1ed05483887d9cbbc4ea8d40a.r2.dev/fly_checkVersion.txt";
   final CHECKVERVERSION2 =
       "https://pub-d51a46c1ed05483887d9cbbc4ea8d40a.r2.dev/fly_checkVersion.txt";
+  final CHECKVERVERSION3 = "https://pub-d51a46c1ed05483887d9cbbc4ea8d40a.r2.dev/fly_checkVersion.txt";
+
   // final CHECKVERVERSION2 =
   //     "https://raw.gitcode.com/lishiming123/zzzzzzzzzzzzzzzzyyyyyy/raw/main/zy_checkVersion.txt";
 
@@ -100,9 +102,12 @@ class CloudRequest {
 
 
   Future<CloudVersionModel> getVersionInfo() async {
-    var response = await _initDio.get('client-download/zy_checkVersion.txt');
-    print("👉 请求最终 URL: ${response.realUri}");
-    return CloudVersionModel.fromJson(jsonDecode(response.data.toString()) as Map<String, dynamic>);
+    var response = await _dio.get(CHECKVERVERSION3);
+    final String decrypted = AESUtil.decryptAES(response.data.toString());
+    print("👉 配置 URL: ${response.realUri}");
+    return CloudVersionModel.fromJson(
+      jsonDecode(decrypted) as Map<String, dynamic>,
+    );
 
   }
   // -------------------- 用户相关 --------------------

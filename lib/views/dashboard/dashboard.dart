@@ -19,6 +19,7 @@ import '../../zhuiyun/cloud_model/CloudVersionStorage.dart';
 import '../../zhuiyun/cloud_utils/cloud_colors.dart';
 import '../../zhuiyun/cloud_utils/cloud_login_state.dart';
 import '../../zhuiyun/cloud_utils/cloud_request.dart';
+import '../../zhuiyun/cloud_vip/cloud_vip_page.dart';
 import 'widgets/start_button.dart';
 
 typedef _IsEditWidgetBuilder = Widget Function(bool isEdit);
@@ -183,6 +184,15 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
             icon: Icon(Icons.add_circle),
           ),
         ),
+
+      FadeRotationScaleBox(
+        child: TextButton(
+          key: ValueKey<bool>(isEdit),
+          onPressed: _handlebGoShoppPage,
+          child: Text('购买套餐'),
+        ),
+      ),
+
       // FadeRotationScaleBox(
       //   child: isEdit
       //       ? IconButton(
@@ -196,6 +206,8 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       //     onPressed: _handleUpdateIsEdit,
       //   ),
       // ),
+
+
     ];
   }
 
@@ -222,12 +234,24 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     );
   }
 
+  /// 新增功能
+  Future<void> _handlebGoShoppPage() async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CloudVipPage(),
+      ),
+    );
+  }
+
+
   Future<void> _handleUpdateIsEdit() async {
     if (_isEditNotifier.value == true) {
       await _handleSave();
     }
     _isEditNotifier.value = !_isEditNotifier.value;
   }
+
 
   Future<void> _handleSave() async {
     final currentState = key.currentState;
@@ -297,7 +321,6 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
 
   Future<bool> canUpdateProfile(String subscribeUrl) async {
     final appController = globalState.appController;
-
     /// 当前 profile（正确来源）
     Profile? currentProfile;
     final currentProfileId = globalState.config.currentProfileId;
@@ -367,14 +390,10 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       if (version != data?.version && data?.forcedFlag == 1) {
         final vList = data?.versionIntroduction?.split('\n') ?? [];
         final downloadUrl = data?.updateAddress ?? '';
-        _cloudDialog('有新版本啦', vList, downloadUrl);
+        _cloudDialog('有新版本啦', vList, "");
       } else if (data?.show == 1) {
         final prefs = await SharedPreferences.getInstance();
-
-        final version = CloudVersionStorage.instance.model;
-
-        // final title = data?.title ?? '';
-        // final content = data?.content ?? '';
+        final version = value;
 
         final title = version?.data?.title ?? '';
         final content = version?.data?.content ?? '';
@@ -460,78 +479,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   }
 
 
-
-
-  @override
-  // Widget build(BuildContext context) {
-  //   final dashboardState = ref.watch(dashboardStateProvider);
-  //   final columns = max(4 * ((dashboardState.contentWidth / 280).ceil()), 8);
-  //   final spacing = 14.ap;
-  //   final children = [
-  //     ...dashboardState.dashboardWidgets
-  //         .where(
-  //           (item) => item.platforms.contains(SupportPlatform.currentPlatform),
-  //         )
-  //         .map((item) => item.widget),
-  //   ];
-  //   WidgetsBinding.instance.addPostFrameCallback((_) {
-  //     _addedWidgetsNotifier.value = DashboardWidget.values
-  //         .where(
-  //           (item) =>
-  //               !children.contains(item.widget) &&
-  //               item.platforms.contains(SupportPlatform.currentPlatform),
-  //         )
-  //         .map((item) => item.widget)
-  //         .toList();
-  //   });
-  //   return _buildIsEdit(
-  //     (isEdit) => CommonScaffold(
-  //       title: appLocalizations.dashboard,
-  //       actions: _buildActions(isEdit),
-  //       floatingActionButton: const StartButton(),
-  //       body: Align(
-  //         alignment: Alignment.topCenter,
-  //         child: SingleChildScrollView(
-  //           padding: const EdgeInsets.all(16).copyWith(bottom: 88),
-  //           child: isEdit
-  //               ? SystemBackBlock(
-  //                   child: CommonPopScope(
-  //                     child: SuperGrid(
-  //                       key: key,
-  //                       crossAxisCount: columns,
-  //                       crossAxisSpacing: spacing,
-  //                       mainAxisSpacing: spacing,
-  //                       children: [
-  //                         ...dashboardState.dashboardWidgets
-  //                             .where(
-  //                               (item) => item.platforms.contains(
-  //                                 SupportPlatform.currentPlatform,
-  //                               ),
-  //                             )
-  //                             .map((item) => item.widget),
-  //                       ],
-  //                       onUpdate: () {
-  //                         _handleSave();
-  //                       },
-  //                     ),
-  //                     onPop: (context) {
-  //                       _handleUpdateIsEdit();
-  //                       return false;
-  //                     },
-  //                   ),
-  //                 )
-  //               : Grid(
-  //                   crossAxisCount: columns,
-  //                   crossAxisSpacing: spacing,
-  //                   mainAxisSpacing: spacing,
-  //                   children: children,
-  //                 ),
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
-
+  /// 主体界面
   @override
   Widget build(BuildContext context) {
     final dashboardState = ref.watch(dashboardStateProvider);
@@ -584,17 +532,20 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 /// 🔝 顶部 View（Header）
-                (version?.data?.show ==1)?
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start, // 左对齐
-                  children: [
-                    Text(version?.data?.title ?? '',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),),
-                    Text(version?.data?.content ?? ''),
-                  ],
+                (version?.data?.show !=1)?
+                Padding(
+                  padding: const EdgeInsets.all(5),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start, // 左对齐
+                    children: [
+                      Text(version?.data?.title ?? '',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),),
+                      Text(version?.data?.content ?? ''),
+                    ],
+                  ),
                 ):const SizedBox.shrink(),
                 ShopDetailSection(
                   planName: _planName,
@@ -684,7 +635,6 @@ class ShopDetailSection extends StatelessWidget {
   final double progress;
   final String? subscribeUrl; // 订阅地址
   final VoidCallback? onUpdate; // 可选自定义回调
-  final spacing = 12.ap;
 
    ShopDetailSection({
     super.key,
@@ -703,7 +653,7 @@ class ShopDetailSection extends StatelessWidget {
     return Card(
       child: Container(
         height: 135,
-        padding: const EdgeInsets.all(spacing),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(borderRadius: BorderRadius.circular(15)),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,

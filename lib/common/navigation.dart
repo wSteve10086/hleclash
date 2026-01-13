@@ -33,31 +33,32 @@ class Navigation {
         builder: (_) =>
             const ProfilesView(key: GlobalObjectKey(PageLabel.profiles)),
       ),
-      NavigationItem(
-        icon: Icon(Icons.view_timeline),
-        label: PageLabel.requests,
-        builder: (_) =>
-            const RequestsView(key: GlobalObjectKey(PageLabel.requests)),
-        description: 'requestsDesc',
-        modes: [NavigationItemMode.desktop, NavigationItemMode.more],
-      ),
-      NavigationItem(
-        icon: Icon(Icons.ballot),
-        label: PageLabel.connections,
-        builder: (_) =>
-            const ConnectionsView(key: GlobalObjectKey(PageLabel.connections)),
-        description: 'connectionsDesc',
-        modes: [NavigationItemMode.desktop, NavigationItemMode.more],
-      ),
-      NavigationItem(
-        icon: Icon(Icons.storage),
-        label: PageLabel.resources,
-        description: 'resourcesDesc',
-        builder: (_) =>
-            const ResourcesView(key: GlobalObjectKey(PageLabel.resources)),
-        modes: [NavigationItemMode.more],
-      ),
-      NavigationItem(
+      // NavigationItem(
+      //   icon: Icon(Icons.view_timeline),
+      //   label: PageLabel.requests,
+      //   builder: (_) =>
+      //       const RequestsView(key: GlobalObjectKey(PageLabel.requests)),
+      //   description: 'requestsDesc',
+      //   modes: [NavigationItemMode.desktop, NavigationItemMode.more],
+      // ),
+      // NavigationItem(
+      //   icon: Icon(Icons.ballot),
+      //   label: PageLabel.connections,
+      //   builder: (_) =>
+      //       const ConnectionsView(key: GlobalObjectKey(PageLabel.connections)),
+      //   description: 'connectionsDesc',
+      //   modes: [NavigationItemMode.desktop, NavigationItemMode.more],
+      // ),
+      // NavigationItem(
+      //   icon: Icon(Icons.storage),
+      //   label: PageLabel.resources,
+      //   description: 'resourcesDesc',
+      //   builder: (_) =>
+      //       const ResourcesView(key: GlobalObjectKey(PageLabel.resources)),
+      //   modes: [NavigationItemMode.more],
+      // ),
+
+    NavigationItem(
         icon: const Icon(Icons.adb),
         label: PageLabel.logs,
         builder: (_) => const LogsView(key: GlobalObjectKey(PageLabel.logs)),
