@@ -25,6 +25,7 @@ import '../zhuiyun/cloud_login/cloud_login_page.dart';
 import '../zhuiyun/cloud_mine/cloud_invite/cloud_invite_page.dart';
 import '../zhuiyun/cloud_mine/cloud_order/cloud_order_page.dart';
 import '../zhuiyun/cloud_model/CloudVersionStorage.dart';
+import '../zhuiyun/cloud_update/cloud_download_webpage.dart';
 import '../zhuiyun/cloud_utils/cloud_colors.dart';
 import '../zhuiyun/cloud_utils/cloud_login_state.dart';
 import '../zhuiyun/cloud_utils/cloud_request.dart';
@@ -103,9 +104,9 @@ class _ToolViewState extends ConsumerState<ToolsView> {
     return generateSection(
       title: context.appLocalizations.other,
       items: [
-        _DisclaimerItem(),
-        if (enableDeveloperMode) _DeveloperItem(),
-        _InfoItem(),
+        // _DisclaimerItem(),
+        // if (enableDeveloperMode) _DeveloperItem(),
+        // _InfoItem(),
         ListItem(
           leading: const Icon(Icons.update),
           title: Text(appLocalizations.checkUpdate),
@@ -115,7 +116,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         ),
         ListItem(
           leading: const Icon(Icons.wifi_channel_sharp),
-          title: const Text("Telegram频道"),
+          title: const Text("Telegram官方频道"),
           onTap: () {
             globalState.openUrl(
               "https://t.me/t.me/fastflyclub",
@@ -135,8 +136,9 @@ class _ToolViewState extends ConsumerState<ToolsView> {
             prefs.setString('invite', '');
             prefs.setString('expired', '');
             LoginState().value = false;
-            CloudVersionStorage.instance.clear();
+            // CloudVersionStorage.instance.clear();
               globalState.appController.updateStatus(false);
+            LoginState().reset();
             final navigationState = ref.watch(navigationStateProvider);
             final navigationItems = navigationState.navigationItems;
             globalState.appController.toPage(
@@ -218,7 +220,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       items: [
         const _LocaleItem(),
         const _ThemeItem(),
-        const _BackupItem(),
+        // const _BackupItem(),
         if (system.isDesktop) const _HotkeyItem(),
         if (system.isWindows) const _LoopbackItem(),
         if (system.isAndroid) const _AccessItem(),
@@ -232,15 +234,37 @@ class _ToolViewState extends ConsumerState<ToolsView> {
   void _checkUpdate() async {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     var version = packageInfo.version;
-    CloudRequest().getVersionInfo().then((value) async {
-      if (version != value.data?.version && value.data?.forcedFlag == 1) {
-        var vList = value.data?.versionIntroduction?.split('\n') ?? [];
-        var downloadUrl = value.data?.updateAddress ?? '';
-        _cloudDialog('版本更新', vList, downloadUrl);
-      } else {
-        CloudToast.show('已是最新版本', context);
+    // CloudRequest().getVersionInfo().then((value) async {
+    final value = CloudVersionStorage.instance.model;
+    if (version != value?.data?.version && value?.data?.forcedFlag == 1) {
+      var vList = value?.data?.versionIntroduction?.split('\n') ?? [];
+      String downloadUrl = '';
+      if (Platform.isAndroid) {
+        downloadUrl = value?.data?.updateAddress_android ?? '';
+      } else if (Platform.isIOS) {
+        downloadUrl = value?.data?.updateAddress_ios ?? '';
+      } else if (Platform.isMacOS) {
+        downloadUrl = value?.data?.updateAddress_mac ?? '';
+      } else if (Platform.isWindows) {
+        downloadUrl = value?.data?.updateAddress_windows ?? '';
       }
-    }).catchError((e) {});
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              UpdateDownloadPage(
+                version: version, updateLogs: vList, downloadUrl: downloadUrl,),
+        ),
+      );
+      // _cloudDialog('版本更新', vList, downloadUrl);
+    } else {
+      CloudToast.show('已是最新版本', context);
+    }
+
+    // }).catchError((e) {
+    //   CloudToast.show('已是最新版本', context);
+    //
+    // });
   }
 
   void _cloudDialog(String title, List<String> vList, String downloadUrl) {

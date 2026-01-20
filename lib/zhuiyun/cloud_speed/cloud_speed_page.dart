@@ -46,11 +46,7 @@ class _CloudSpeedPageState extends State<CloudSpeedPage>
   void initState() {
     super.initState();
     getSubscribe();
-    if (Platform.isAndroid) {
-      Future.delayed(const Duration(seconds: 2), () {
-        getVersionInfo();
-      });
-    }
+
   }
 
   void _startTimer() {
@@ -132,141 +128,7 @@ class _CloudSpeedPageState extends State<CloudSpeedPage>
     return formatted;
   }
 
-  getVersionInfo() async {
-    PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    var version = packageInfo.version;
-    CloudRequest().getVersionInfo().then((value) async {
-      if (version != value.data?.version && value.data?.forcedFlag == 1) {
-        var vList = value.data?.versionIntroduction?.split('\n') ?? [];
-        var downloadUrl = value.data?.updateAddress ?? '';
-        _cloudDialog('版本更新', vList, downloadUrl);
-      } else if (value.data?.show == 1) {
-        final SharedPreferences prefs = await SharedPreferences.getInstance();
-        String content = value.data?.content ?? '';
-        var title = value.data?.title ?? '';
-        var vList = value.data?.content?.split('\n') ?? [];
 
-        String aTitle = prefs.getString('title') ?? '';
-        String aContent = prefs.getString('content') ?? '';
-        if (title == aTitle && content == aContent) {
-          return;
-        }
-        await prefs.setString('title', title);
-        await prefs.setString('content', content);
-        _cloudDialog(title, vList, '');
-      }
-    }).catchError((e) {});
-  }
-
-  void _cloudDialog(String title, List<String> vList, String downloadUrl) {
-    showDialog(
-        context: context,
-        builder: (BuildContext c) {
-          return StatefulBuilder(
-              builder: (BuildContext ctx, StateSetter updateState) => Center(
-                    child: Container(
-                      height: 310,
-                      margin: const EdgeInsets.all(18),
-                      padding: const EdgeInsets.all(15),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(15),
-                        gradient: const LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            CloudColors.c40455D,
-                            CloudColors.c242738,
-                          ],
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 21,
-                              color: CloudColors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Container(
-                            height: 160,
-                            margin: const EdgeInsets.symmetric(vertical: 20),
-                            child: SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: List.generate(
-                                    vList.length,
-                                    (index) => Text(
-                                          vList[index],
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            color: CloudColors.white,
-                                          ),
-                                        )),
-                              ),
-                            ),
-                          ),
-                          GestureDetector(
-                            behavior: HitTestBehavior.translucent,
-                            onTap: () async {
-                              if (downloadUrl.isEmpty) {
-                                Navigator.of(c).pop();
-                                return;
-                              }
-                              // var loading = Loading.builder();
-                              // Asuka.addOverlay(loading);
-                              // OtaUpdate()
-                              //     .execute(downloadUrl,
-                              //         destinationFilename: 'last.apk')
-                              //     .listen(
-                              //   (OtaEvent event) {
-                              //     if (event.status == OtaStatus.DOWNLOADING) {
-                              //       _btnTitle = '已下载${event.value}%';
-                              //     }
-                              //     if (event.status == OtaStatus.INSTALLING) {
-                              //       _btnTitle = '安装中...';
-                              //     }
-                              //     updateState(() {});
-                              //
-                              //     if (event.status != OtaStatus.DOWNLOADING) {
-                              //       // loading.remove();
-                              //       Navigator.of(c).pop();
-                              //     }
-                              //   },
-                              // );
-                            },
-                            child: Container(
-                              height: 44,
-                              width: 230,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(22),
-                                gradient: const LinearGradient(
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                  colors: [
-                                    CloudColors.c63483D,
-                                    CloudColors.cBA987A,
-                                  ],
-                                ),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  title == '版本更新' ? _btnTitle : '我知道了',
-                                  style: const TextStyle(
-                                    color: CloudColors.white,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ));
-        });
-  }
 
   Future<void> getProxies() async {
     await Future.delayed(const Duration(seconds: 1));

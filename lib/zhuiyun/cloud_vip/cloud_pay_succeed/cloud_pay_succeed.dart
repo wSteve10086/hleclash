@@ -15,11 +15,12 @@ class CloudPaySucceedPage extends StatefulWidget {
 
 class _CloudPaySucceedPageState extends State<CloudPaySucceedPage> {
   @override
-  void initState() {
+  Future<void> initState() async {
     super.initState();
-    LoginState().vip = VipState.normal;
-    LoginState().loadVip();
-
+    // LoginState().vip = VipState.normal;
+    // LoginState().loadVip();
+    // ✅ 正确更新 VIP 状态并触发 UI 刷新
+    await LoginState().refreshVip();
     if (Platform.isMacOS || Platform.isAndroid) {
       final eItem = AnalyticsEventItem(
         itemId: "SKU_888",
@@ -75,11 +76,14 @@ class _CloudPaySucceedPageState extends State<CloudPaySucceedPage> {
           ),
           GestureDetector(
             behavior: HitTestBehavior.translucent,
-            onTap: () {
-              LoginState().vip = VipState.normal;
-              LoginState().loadVip();
-              Navigator.popUntil(context, (route) => Navigator.canPop(context));
+            onTap: ()
+            async {
+              // 1️⃣ 手动刷新 VIP 状态
+              await LoginState().refreshVip();
+              // 2️⃣ 返回上一层或回到根
+              Navigator.popUntil(context, (route) => !Navigator.canPop(context));
             },
+
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
               decoration: BoxDecoration(

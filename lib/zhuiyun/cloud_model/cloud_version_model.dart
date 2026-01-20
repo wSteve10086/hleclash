@@ -45,7 +45,10 @@ class CloudVersionModel {
 class Data {
   Data({
     String? versionIntroduction,
-    String? updateAddress,
+    String? updateAddress_android,
+    String? updateAddress_ios,
+    String? updateAddress_mac,
+    String? updateAddress_windows,
     num? forcedFlag,
     String? version,
     num? versionCode,
@@ -58,7 +61,10 @@ class Data {
     String? btnTitle,
   }) {
     _versionIntroduction = versionIntroduction;
-    _updateAddress = updateAddress;
+    _updateAddress_android = updateAddress_android;
+    _updateAddress_ios = updateAddress_ios;
+    _updateAddress_mac = updateAddress_mac;
+    _updateAddress_windows = updateAddress_windows;
     _forcedFlag = forcedFlag;
     _version = version;
     _versionCode = versionCode;
@@ -73,7 +79,11 @@ class Data {
 
   Data.fromJson(Map<String, dynamic> json) {
     _versionIntroduction = json['versionIntroduction'] as String?;
-    _updateAddress = json['updateAddress'] as String?;
+    _updateAddress_android = json['updateAddress_android'] as String?;
+    _updateAddress_ios = json['updateAddress_ios'] as String?;
+    _updateAddress_mac = json['updateAddress_mac'] as String?;
+    _updateAddress_windows = json['updateAddress_windows'] as String?;
+
     _forcedFlag = json['forcedFlag'] as num?;
     _version = json['version'] as String?;
     _versionCode = json['versionCode'] as num?;
@@ -86,7 +96,11 @@ class Data {
     _btnTitle = json['btnTitle'] as String?;
   }
   String? _versionIntroduction;
-  String? _updateAddress;
+  String? _updateAddress_android;
+  String? _updateAddress_ios;
+  String? _updateAddress_mac;
+  String? _updateAddress_windows;
+
   num? _forcedFlag;
   String? _version;
   num? _versionCode;
@@ -99,7 +113,11 @@ class Data {
   String? _btnTitle;
   Data copyWith({
     String? versionIntroduction,
-    String? updateAddress,
+    String? updateAddress_android,
+    String? updateAddress_ios,
+    String? updateAddress_mac,
+    String? updateAddress_windows,
+
     num? forcedFlag,
     String? version,
     num? versionCode,
@@ -113,7 +131,11 @@ class Data {
   }) =>
       Data(
         versionIntroduction: versionIntroduction ?? _versionIntroduction,
-        updateAddress: updateAddress ?? _updateAddress,
+        updateAddress_android: updateAddress_android ?? _updateAddress_android,
+        updateAddress_ios: updateAddress_ios ?? _updateAddress_ios,
+        updateAddress_mac: updateAddress_mac ?? _updateAddress_mac,
+        updateAddress_windows: updateAddress_windows ?? _updateAddress_windows,
+
         forcedFlag: forcedFlag ?? _forcedFlag,
         version: version ?? _version,
         versionCode: versionCode ?? _versionCode,
@@ -126,7 +148,11 @@ class Data {
         btnTitle: btnTitle ?? _btnTitle,
       );
   String? get versionIntroduction => _versionIntroduction;
-  String? get updateAddress => _updateAddress;
+  String? get updateAddress_android => _updateAddress_android;
+  String? get updateAddress_ios => _updateAddress_ios;
+  String? get updateAddress_mac => _updateAddress_mac;
+  String? get updateAddress_windows => _updateAddress_windows;
+
   num? get forcedFlag => _forcedFlag;
   String? get version => _version;
   num? get versionCode => _versionCode;
@@ -141,7 +167,11 @@ class Data {
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
     map['versionIntroduction'] = _versionIntroduction;
-    map['updateAddress'] = _updateAddress;
+    map['updateAddress_android'] = _updateAddress_android;
+    map['updateAddress_ios'] = _updateAddress_ios;
+    map['updateAddress_mac'] = _updateAddress_mac;
+    map['updateAddress_windows'] = _updateAddress_windows;
+
     map['forcedFlag'] = _forcedFlag;
     map['version'] = _version;
     map['versionCode'] = _versionCode;

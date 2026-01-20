@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 
 import 'package:fl_clash/zhuiyun/cloud_model/cloud_goods_model.dart';
 
+import '../cloud_model/cloud_googs_conten_parser.dart';
+
+
 class CloudFlowWidget extends StatelessWidget {
   const CloudFlowWidget({
     super.key,
@@ -19,6 +22,7 @@ class CloudFlowWidget extends StatelessWidget {
         final Data data = list[index];
         final content = data.content ?? '';
         final List<String> contentList = content.split('<br>\n');
+
         return GestureDetector(
           behavior: HitTestBehavior.translucent,
           onTap: () {
@@ -82,19 +86,7 @@ class CloudFlowWidget extends StatelessWidget {
                     const SizedBox(
                       height: 10,
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: List.generate(
-                        contentList.length,
-                        (i) => Text(
-                          contentList[i]
-                              .trim()
-                              .replaceAll('<br>', '')
-                              .replaceAll('&#x2714', '✅'),
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                      ),
-                    ),
+                    buildGoodsItem(list[index]),
                   ],
                 ),
               ),
@@ -104,6 +96,51 @@ class CloudFlowWidget extends StatelessWidget {
       }),
     );
   }
+
+
+  Widget buildGoodsItem(Data data) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        /// 套餐名
+        Text(
+          data.name ?? '',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        /// 价格（⚠️ 永远用字段，不用 HTML）
+        if (data.monthPrice != null)
+          Text('月付：￥${(data.monthPrice! / 100).toStringAsFixed(2)}'),
+        if (data.quarterPrice != null)
+          Text('季付：￥${(data.quarterPrice! / 100).toStringAsFixed(2)}'),
+        if (data.halfYearPrice != null)
+          Text('半年付：￥${(data.halfYearPrice! / 100).toStringAsFixed(2)}'),
+        if (data.yearPrice != null)
+          Text('年付：￥${(data.yearPrice! / 100).toStringAsFixed(2)}'),
+
+        const SizedBox(height: 8),
+
+        /// 权益列表
+        ...data.parsedContentList.map(
+              (e) => Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: Text(e)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
 
   String _getPrice(Data data) {
     var price = '0';

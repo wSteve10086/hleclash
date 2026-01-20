@@ -560,8 +560,8 @@ class AppController {
       window?.hide();
     }
     await _handlePreference();
-    await _handlerDisclaimer();
-    await _showCrashlyticsTip();
+    // await _handlerDisclaimer();
+    // await _showCrashlyticsTip();
     await _connectCore();
     await _initCore();
     await _initStatus();

@@ -23,7 +23,7 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
   final TextEditingController _couponController = TextEditingController();
 
   List<String> _contentList = [];
-  Data? _data;
+  Data? _detailDate;
   String _tradeNo = '';
   String _discountAmount = '';
   String _surplusAmount = '';
@@ -53,8 +53,9 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
         if (mounted) {
           setState(() {
             final content = m.data?.content ?? '';
-            _contentList = content.split('<br>\n');
-            _data = m.data;
+            // _contentList = content.split('<br>\n');
+            _contentList = getContent(m.data?.content ?? '');
+            _detailDate = m.data;
             /// 判断套餐支持付款类型
             _getPaymentCycle();
 
@@ -104,7 +105,7 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              _data?.name ?? '',
+                              _detailDate?.name ?? '',
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -135,6 +136,8 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
                             const SizedBox(
                               height: 10,
                             ),
+
+
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: List.generate(
@@ -301,6 +304,22 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
     );
   }
 
+  ///
+  List<String> getContent(String content) {
+    if (content.isEmpty) return [];
+
+    final text = content
+        .replaceAll('\n', '')
+        .replaceAll(RegExp(r'<br\s*/?>'), '\n')
+        .replaceAll('&#x2714;', '✅');
+
+    return text
+        .split('\n')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .where((e) => RegExp(r'^[①②③④⑤⑥⑦⑧⑨]').hasMatch(e))
+        .toList();
+  }
 
 
 
@@ -480,6 +499,9 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
         });
   }
 
+
+
+
   void _checkOrder() {
     CloudToast.loading(context);
     CloudRequest().getOrderList().then((o.CloudOrderModel m) async {
@@ -615,25 +637,25 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
   String _getPrice() {
     var price = '0';
     if(_period == 'onetime_price'){
-      price = (_data?.onetimePrice ?? 0).toString();
+      price = (_detailDate?.onetimePrice ?? 0).toString();
     }
     else if(_period == 'month_price'){
-      price = (_data?.monthPrice ?? 0).toString();
+      price = (_detailDate?.monthPrice ?? 0).toString();
     }
     else if(_period == 'quarter_price'){
-      price = (_data?.quarterPrice ?? 0).toString();
+      price = (_detailDate?.quarterPrice ?? 0).toString();
     }
     else if(_period == 'half_year_price'){
-      price = (_data?.halfYearPrice ?? 0).toString();
+      price = (_detailDate?.halfYearPrice ?? 0).toString();
     }
     else if(_period == 'year_price'){
-      price = (_data?.yearPrice ?? 0).toString();
+      price = (_detailDate?.yearPrice ?? 0).toString();
     }
     else if(_period == 'two_year_price'){
-      price = (_data?.twoYearPrice ?? 0).toString();
+      price = (_detailDate?.twoYearPrice ?? 0).toString();
     }
     else if(_period == 'three_year_price'){
-      price = (_data?.threeYearPrice ?? 0).toString();
+      price = (_detailDate?.threeYearPrice ?? 0).toString();
     }
 
     if (price.length >= 3) {
@@ -674,40 +696,40 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
 
 
   void _getPaymentCycle(){
-    if ((_data?.onetimePrice ?? 0) > 0) {
+    if ((_detailDate?.onetimePrice ?? 0) > 0) {
       // _period = ;
       _goodsTypeList.add('onetime_price');
       _goodsTypeNameList.add("一次性");
     }
-    if ((_data?.monthPrice ?? 0) > 0) {
+    if ((_detailDate?.monthPrice ?? 0) > 0) {
       // _period = ;
       _goodsTypeList.add('month_price');
       _goodsTypeNameList.add("月付");
     }
-    if ((_data?.quarterPrice ?? 0) > 0) {
+    if ((_detailDate?.quarterPrice ?? 0) > 0) {
       // _period = ;
       _goodsTypeList.add('quarter_price');
       _goodsTypeNameList.add("季付");
     }
-    if ((_data?.halfYearPrice ?? 0) > 0) {
+    if ((_detailDate?.halfYearPrice ?? 0) > 0) {
       // _period = ;
       _goodsTypeList.add('half_year_price');
       _goodsTypeNameList.add("半年付");
     }
 
-    if ((_data?.yearPrice ?? 0) > 0) {
+    if ((_detailDate?.yearPrice ?? 0) > 0) {
       // _period = ;
       _goodsTypeList.add('year_price');
       _goodsTypeNameList.add("年付");
     }
 
-    if ((_data?.twoYearPrice ?? 0) > 0) {
+    if ((_detailDate?.twoYearPrice ?? 0) > 0) {
       // _period = ;
       _goodsTypeList.add('two_year_price');
       _goodsTypeNameList.add("两年付");
     }
 
-    if ((_data?.threeYearPrice ?? 0) > 0) {
+    if ((_detailDate?.threeYearPrice ?? 0) > 0) {
       // _period = 'three_year_price';
       _goodsTypeList.add('three_year_price');
       _goodsTypeNameList.add("三年付");

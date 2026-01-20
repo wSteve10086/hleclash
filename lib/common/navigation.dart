@@ -27,12 +27,12 @@ class Navigation {
             ? [NavigationItemMode.mobile, NavigationItemMode.desktop]
             : [],
       ),
-      NavigationItem(
-        icon: Icon(Icons.folder),
-        label: PageLabel.profiles,
-        builder: (_) =>
-            const ProfilesView(key: GlobalObjectKey(PageLabel.profiles)),
-      ),
+      // NavigationItem(
+      //   icon: Icon(Icons.folder),
+      //   label: PageLabel.profiles,
+      //   builder: (_) =>
+      //       const ProfilesView(key: GlobalObjectKey(PageLabel.profiles)),
+      // ),
       // NavigationItem(
       //   icon: Icon(Icons.view_timeline),
       //   label: PageLabel.requests,

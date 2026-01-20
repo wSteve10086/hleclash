@@ -5,8 +5,8 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <application
-        android:icon="@mipmap/ic_launcher"
-        android:label="FlClash Debug"
+        android:icon="@drawable/ic_icon"
+        android:label="Fastfly Debug"
         tools:replace="android:label">
         <service
             android:name=".TileService"

@@ -57,7 +57,7 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
               ),
             );
             webView.launch(
-              'https://go.crisp.chat/chat/embed/?website_id=45c82007-8e52-44e6-8ded-31db17a83c4f',
+              'https://go.crisp.chat/chat/embed/?website_id=36c7c66a-f768-4354-9823-5aaefec60c81',
             );
           } else {
             Navigator.push(
@@ -182,7 +182,7 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
             // 官网入口
             GestureDetector(
               onTap: () async {
-                const url = 'https://www.zhuiyun.me';
+                const url = 'https://fastfly.club';
                 if (await canLaunchUrl(Uri.parse(url))) {
                   await launchUrl(Uri.parse(url),
                       mode: LaunchMode.externalApplication);
@@ -193,7 +193,7 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
               child: const Padding(
                 padding: EdgeInsets.only(bottom: 40),
                 child: Text(
-                  '追云永久导航页 www.zhuiyun.me',
+                  '永久跳转网站:fastfly.club',
                   style: TextStyle(
                     fontSize: 13,
                     color: CloudColors.c3254FF,
@@ -268,12 +268,12 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
       _pwdController.text = "87764302012";
       CloudToast.show("切换到测试账号 1", context);
     } else if (_tapCount == 3) {
-      _emailController.text = "87764302012@gmail.com";
-      _pwdController.text = "87764302012";
+      _emailController.text = "77764302012@gmail.com";
+      _pwdController.text = "77764302012";
       CloudToast.show("切换到测试账号 2", context);
     } else if (_tapCount == 4) {
-      _emailController.text = "87764302012@gmail.com";
-      _pwdController.text = "87764302012";
+      _emailController.text = "77764302012@gmail.com";
+      _pwdController.text = "77764302012";
       CloudToast.show("切换到测试账号 3", context);
       _tapCount = 0;
     }

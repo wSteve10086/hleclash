@@ -1,3 +1,5 @@
+
+
 class CloudGoodsModel {
   CloudGoodsModel({
     String? status,

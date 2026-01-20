@@ -30,11 +30,10 @@ class CloudRequest {
   factory CloudRequest() => _instance;
 
   // -------------------- 常量 --------------------
-  final CHECKVERVERSION =
-      "https://pub-d51a46c1ed05483887d9cbbc4ea8d40a.r2.dev/fly_checkVersion.txt";
+  final CHECKVERVERSION = "https://pub-d51a46c1ed05483887d9cbbc4ea8d40a.r2.dev/fly_checkVersion.txt";
   final CHECKVERVERSION2 =
-      "https://pub-d51a46c1ed05483887d9cbbc4ea8d40a.r2.dev/fly_checkVersion.txt";
-  final CHECKVERVERSION3 = "https://pub-d51a46c1ed05483887d9cbbc4ea8d40a.r2.dev/fly_checkVersion.txt";
+      "https://raw.gitcode.com/lishiming123/zzzzzzzzzzzzzzzzyyyyyy/raw/main/fly_checkVersion.txt";
+  final CHECKVERVERSION3 = "https://zyxb.oss-cn-wuhan-lr.aliyuncs.com/fly_checkVersion.txt";
 
   // final CHECKVERVERSION2 =
   //     "https://raw.gitcode.com/lishiming123/zzzzzzzzzzzzzzzzyyyyyy/raw/main/zy_checkVersion.txt";
@@ -42,15 +41,10 @@ class CloudRequest {
   // -------------------- Dio --------------------
   final Dio _dio = Dio(BaseOptions(
     baseUrl: '',
-    connectTimeout: const Duration(seconds: 3),
-    receiveTimeout: const Duration(seconds: 5),
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 15),
   ));
 
-  final Dio _initDio = Dio(BaseOptions(
-    baseUrl: 'https://sub.flyyydds.top:21600/',
-    connectTimeout: const Duration(seconds: 3),
-    receiveTimeout: const Duration(seconds: 5),
-  ));
 
 
 
