@@ -24,11 +24,11 @@ class _CloudVipPageState extends State<CloudOrderPage> {
   @override
   void initState() {
     super.initState();
-
-    Future.delayed(const Duration(milliseconds: 100), () {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadData();
       _getGoodsPayMethod();
     });
+
   }
 
   Future<void> _loadData() async {

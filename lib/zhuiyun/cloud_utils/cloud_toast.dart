@@ -36,6 +36,7 @@ class CloudToast {
   static void loading(BuildContext context) {
     showDialog(
       barrierDismissible: false,
+      useRootNavigator: true,
       context: context,
       builder: (context) {
         return Center(
@@ -64,7 +65,9 @@ class CloudToast {
 
   static void hideLoading(BuildContext context) {
     if (Navigator.canPop(context)) {
-      Navigator.pop(context);
+      // Navigator.pop(context);
+      Navigator.of(context, rootNavigator: true).pop();
+
     }
   }
 

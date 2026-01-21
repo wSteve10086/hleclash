@@ -145,11 +145,12 @@ class _ToolViewState extends ConsumerState<ToolsView> {
               navigationItems[0].label,
             );
             deleteAllProfiles();
-            Navigator.pushReplacement(
-              context,
+            Navigator.of(context, rootNavigator: true)
+                .pushAndRemoveUntil(
               MaterialPageRoute(
-                builder: (context) => const CloudLoginPage(),
+                builder: (_) => const CloudLoginPage(),
               ),
+                  (route) => false,
             );
           },
         ),
