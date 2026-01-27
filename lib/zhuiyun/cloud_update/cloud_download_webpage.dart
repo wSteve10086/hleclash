@@ -16,9 +16,7 @@ class UpdateDownloadPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('版本更新'),
         centerTitle: true,
@@ -34,7 +32,6 @@ class UpdateDownloadPage extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
               ),
             ),
 
@@ -46,7 +43,6 @@ class UpdateDownloadPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: Colors.white,
               ),
             ),
 
@@ -59,7 +55,6 @@ class UpdateDownloadPage extends StatelessWidget {
                   '• $e',
                   style: const TextStyle(
                     fontSize: 14,
-                    color: Colors.white70,
                   ),
                 ),
               ),
@@ -73,7 +68,6 @@ class UpdateDownloadPage extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: Colors.white,
               ),
             ),
 
@@ -84,14 +78,12 @@ class UpdateDownloadPage extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF2A2A2A),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: SelectableText(
                 downloadUrl,
                 style: const TextStyle(
                   fontSize: 13,
-                  color: Colors.white70,
                 ),
               ),
             ),
@@ -117,8 +109,6 @@ class UpdateDownloadPage extends StatelessWidget {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3A5CCC),
-                  foregroundColor: Colors.white,
                 ),
                 child: const Text('复制下载地址'),
               ),
@@ -131,7 +121,6 @@ class UpdateDownloadPage extends StatelessWidget {
               '温馨提示：\n请打开系统浏览器，粘贴下载地址完成安装，建议下载好安装包后，先卸载本地版本在安装最新版本。',
               style: TextStyle(
                 fontSize: 13,
-                color: Colors.white54,
               ),
             ),
           ],
