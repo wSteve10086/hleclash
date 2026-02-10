@@ -29,22 +29,11 @@ class CloudVersionModel {
   }
 }
 
-/// versionIntroduction : "版本更新内容:\n1. 优化无法登录问题. \n2.如果更新提示您手机存在相同版本,请卸载 APP重新安装 "
-/// updateAddress : "https://sub.flyyydds.top:21600/client-download/zhuiyun.apk"
-/// forcedFlag : 0
-/// version : "2.3.1"
-/// versionCode : 19
-/// title : "配置文件未激活解决方案"
-/// content : "\n 由于域名被墙,需要重新登录获取订阅\n 1.APP退出登录\n2.使用 4G 流量打开APP,等十秒在点连接按即可\n3.成功使用在切换wifi"
-/// show : 0
-/// img_url : ""
-/// baseUrl : "https://sub.chasing.sbs:21600"
-/// subUrl : "https://sub.chasing.sbs:21600"
-/// btnTitle : "查看更多福利"
 
 class Data {
   Data({
     String? versionIntroduction,
+    String? updateAddress,
     String? updateAddress_android,
     String? updateAddress_ios,
     String? updateAddress_mac,
@@ -59,8 +48,13 @@ class Data {
     String? baseUrl,
     String? subUrl,
     String? btnTitle,
+    String? nodeName01,
+    String? nodeName02,
+
+
   }) {
     _versionIntroduction = versionIntroduction;
+    _updateAddress = updateAddress;
     _updateAddress_android = updateAddress_android;
     _updateAddress_ios = updateAddress_ios;
     _updateAddress_mac = updateAddress_mac;
@@ -75,15 +69,18 @@ class Data {
     _baseUrl = baseUrl;
     _subUrl = subUrl;
     _btnTitle = btnTitle;
+    _nodeName01 = nodeName01;
+    _nodeName02 = nodeName02;
+
   }
 
   Data.fromJson(Map<String, dynamic> json) {
     _versionIntroduction = json['versionIntroduction'] as String?;
+    _updateAddress = json['updateAddress'] as String?;
     _updateAddress_android = json['updateAddress_android'] as String?;
     _updateAddress_ios = json['updateAddress_ios'] as String?;
     _updateAddress_mac = json['updateAddress_mac'] as String?;
     _updateAddress_windows = json['updateAddress_windows'] as String?;
-
     _forcedFlag = json['forcedFlag'] as num?;
     _version = json['version'] as String?;
     _versionCode = json['versionCode'] as num?;
@@ -94,13 +91,17 @@ class Data {
     _baseUrl = json['baseUrl'] as String?;
     _subUrl = json['subUrl'] as String?;
     _btnTitle = json['btnTitle'] as String?;
+    _nodeName01 = json['nodeName01'] as String?;
+    _nodeName02 = json['nodeName02'] as String?;
+
+
   }
   String? _versionIntroduction;
+  String? _updateAddress;
   String? _updateAddress_android;
   String? _updateAddress_ios;
   String? _updateAddress_mac;
   String? _updateAddress_windows;
-
   num? _forcedFlag;
   String? _version;
   num? _versionCode;
@@ -111,13 +112,16 @@ class Data {
   String? _baseUrl;
   String? _subUrl;
   String? _btnTitle;
+  String? _nodeName01;
+  String? _nodeName02;
+
   Data copyWith({
     String? versionIntroduction,
+    String? updateAddress,
     String? updateAddress_android,
     String? updateAddress_ios,
     String? updateAddress_mac,
     String? updateAddress_windows,
-
     num? forcedFlag,
     String? version,
     num? versionCode,
@@ -128,14 +132,17 @@ class Data {
     String? baseUrl,
     String? subUrl,
     String? btnTitle,
+    String? nodeName01,
+    String? nodeName02,
+
   }) =>
       Data(
         versionIntroduction: versionIntroduction ?? _versionIntroduction,
+        updateAddress: updateAddress ?? _updateAddress,
         updateAddress_android: updateAddress_android ?? _updateAddress_android,
         updateAddress_ios: updateAddress_ios ?? _updateAddress_ios,
         updateAddress_mac: updateAddress_mac ?? _updateAddress_mac,
         updateAddress_windows: updateAddress_windows ?? _updateAddress_windows,
-
         forcedFlag: forcedFlag ?? _forcedFlag,
         version: version ?? _version,
         versionCode: versionCode ?? _versionCode,
@@ -146,13 +153,16 @@ class Data {
         baseUrl: baseUrl ?? _baseUrl,
         subUrl: subUrl ?? _subUrl,
         btnTitle: btnTitle ?? _btnTitle,
+        nodeName01: nodeName01 ?? _nodeName01,
+        nodeName02: nodeName02 ?? _nodeName02,
+
       );
   String? get versionIntroduction => _versionIntroduction;
+  String? get updateAddress => _updateAddress;
   String? get updateAddress_android => _updateAddress_android;
   String? get updateAddress_ios => _updateAddress_ios;
   String? get updateAddress_mac => _updateAddress_mac;
   String? get updateAddress_windows => _updateAddress_windows;
-
   num? get forcedFlag => _forcedFlag;
   String? get version => _version;
   num? get versionCode => _versionCode;
@@ -163,15 +173,17 @@ class Data {
   String? get baseUrl => _baseUrl;
   String? get subUrl => _subUrl;
   String? get btnTitle => _btnTitle;
+  String? get nodeName01 => _nodeName01;
+  String? get nodeName02 => _nodeName02;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
     map['versionIntroduction'] = _versionIntroduction;
+    map['updateAddress'] = _updateAddress;
     map['updateAddress_android'] = _updateAddress_android;
     map['updateAddress_ios'] = _updateAddress_ios;
     map['updateAddress_mac'] = _updateAddress_mac;
     map['updateAddress_windows'] = _updateAddress_windows;
-
     map['forcedFlag'] = _forcedFlag;
     map['version'] = _version;
     map['versionCode'] = _versionCode;
@@ -182,6 +194,9 @@ class Data {
     map['baseUrl'] = _baseUrl;
     map['subUrl'] = _subUrl;
     map['btnTitle'] = _btnTitle;
+    map['nodeName01'] = _nodeName01;
+    map['nodeName02'] = _nodeName02;
+
     return map;
   }
 }

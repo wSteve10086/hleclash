@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
@@ -5,8 +6,10 @@ import 'dart:typed_data';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/core/controller.dart';
 import 'package:fl_clash/enum/enum.dart';
+import 'package:fl_clash/models/profile_utils.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../zhuiyun/cloud_model/CloudVersionStorage.dart';
 import 'clash_config.dart';
 
 part 'generated/profile.freezed.dart';
@@ -203,15 +206,47 @@ extension ProfileExtension on Profile {
     ).saveFile(response.data ?? Uint8List.fromList([]));
   }
 
+  // Future<Profile> saveFile(Uint8List bytes) async {
+  //   final message = await coreController.validateConfigFormBytes(bytes);
+  //   if (message.isNotEmpty) {
+  //     throw message;
+  //   }
+  //   final file = await getFile();
+  //   await Isolate.run(() async {
+  //     return await file.writeAsBytes(bytes);
+  //   });
+  //   return copyWith(lastUpdateDate: DateTime.now());
+  //
+  // }
   Future<Profile> saveFile(Uint8List bytes) async {
-    final message = await coreController.validateConfigFormBytes(bytes);
+    String config = utf8.decode(bytes);
+    final node1 = CloudVersionStorage.instance.model?.data?.nodeName01;
+    final node2 = CloudVersionStorage.instance.model?.data?.nodeName02;
+
+    final newServers = [node1, node2]
+        .whereType<String>()
+        .where((e) => e.isNotEmpty)
+        .toList();
+
+    if (newServers.isNotEmpty) {
+      config = replaceAllProxyServer(
+        config,
+        newServers: newServers,
+      );
+    }
+
+    // 校验修改后的配置
+    final message = await coreController.validateConfig(config);
     if (message.isNotEmpty) {
       throw message;
     }
     final file = await getFile();
+    // 放到 isolate 避免卡顿
     await Isolate.run(() async {
-      return await file.writeAsBytes(bytes);
+      await file.writeAsString(config);
     });
+
     return copyWith(lastUpdateDate: DateTime.now());
   }
+
 }

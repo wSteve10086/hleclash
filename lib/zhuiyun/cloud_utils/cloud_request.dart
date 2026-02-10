@@ -80,8 +80,8 @@ class CloudRequest {
       try {
         var response = await request();
         // 打印 Dio 最终访问的真实地址
-        print("👉 请求最终 URL: ${response.realUri}");
         final String decrypted = AESUtil.decryptAES(response.data.toString());
+        print("👉 请求最终 URL: ${response.realUri}");
         return CloudVersionModel.fromJson(
           jsonDecode(decrypted) as Map<String, dynamic>,
         );
