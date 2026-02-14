@@ -43,6 +43,8 @@ class ToolsView extends ConsumerStatefulWidget {
 }
 
 class _ToolViewState extends ConsumerState<ToolsView> {
+  late String currentVersion = "1.0.0";
+
   Widget _buildNavigationMenuItem(NavigationItem navigationItem) {
     return ListItem.open(
       leading: navigationItem.icon,
@@ -67,6 +69,19 @@ class _ToolViewState extends ConsumerState<ToolsView> {
     );
   }
 
+
+  @override
+  void initState() {
+    super.initState();
+    _initVersion();
+  }
+  // 获取当前版本号
+  void _initVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      currentVersion = packageInfo.version;
+    });
+  }
   List<Widget> _getMineList() {
     return generateSection(
       title: '我的',
@@ -101,6 +116,12 @@ class _ToolViewState extends ConsumerState<ToolsView> {
 
 
   List<Widget> _getOtherList(bool enableDeveloperMode) {
+    final value = CloudVersionStorage.instance.model;
+    var newVersion = value?.data?.version;
+    var alertmsg = '';
+    if (newVersion != currentVersion && value?.data?.forcedFlag == 1) {
+      alertmsg = "发现新版本 v$newVersion（当前 v$currentVersion）";
+    }
     return generateSection(
       title: context.appLocalizations.other,
       items: [
@@ -110,9 +131,10 @@ class _ToolViewState extends ConsumerState<ToolsView> {
         ListItem(
           leading: const Icon(Icons.update),
           title: Text(appLocalizations.checkUpdate),
-          onTap: () {
-            _checkUpdate();
-          },
+          trailing: Text(
+            alertmsg,
+          ),
+          onTap: _checkUpdate,
         ),
         ListItem(
           leading: const Icon(Icons.wifi_channel_sharp),
