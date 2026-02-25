@@ -149,11 +149,18 @@ class Build {
       workingDirectory: workingDirectory,
       runInShell: runInShell,
     );
+    // process.stdout.listen((data) {
+    //   print(utf8.decode(data));
+    // });
+    // process.stderr.listen((data) {
+    //   print(utf8.decode(data));
+    // });
+
     process.stdout.listen((data) {
-      print(utf8.decode(data));
+      print(latin1.decode(data, allowInvalid: true));
     });
     process.stderr.listen((data) {
-      print(utf8.decode(data));
+      print(latin1.decode(data, allowInvalid: true));
     });
     final exitCode = await process.exitCode;
     if (exitCode != 0 && name != null) throw '$name error';
