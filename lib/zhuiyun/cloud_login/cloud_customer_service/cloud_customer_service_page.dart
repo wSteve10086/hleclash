@@ -42,7 +42,7 @@ class _CloudCustomerServicePageState extends State<CloudCustomerServicePage> {
         ),
       )
       ..loadRequest(Uri.parse(
-          'https://go.crisp.chat/chat/embed/?website_id=45c82007-8e52-44e6-8ded-31db17a83c4f'));
+          'https://go.crisp.chat/chat/embed/?website_id=36c7c66a-f768-4354-9823-5aaefec60c81'));
     // ..loadFlutterAsset('assets/customer_service.html');
   }
 

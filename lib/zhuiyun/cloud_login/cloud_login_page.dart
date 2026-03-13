@@ -15,6 +15,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../cloud_model/CloudVersionStorage.dart';
+import '../cloud_model/cloud_version_model.dart';
+import '../cloud_utils/announcement_manager.dart';
+
 class CloudLoginPage extends StatefulWidget {
   const CloudLoginPage({super.key});
 
@@ -29,8 +33,35 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
   bool _isLoggingIn = false;
   int _tapCount = 0;
 
+  /// ===== 公告相关 =====
+  bool _showRedDot = false;
+  final CloudVersionModel? _announcementData = CloudVersionStorage.instance.model;
+
   bool get _isEmailEmpty => _emailController.text.isEmpty;
   bool get _isPasswordEmpty => _pwdController.text.isEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    _initAnnouncement();
+  }
+
+  Future<void> _initAnnouncement() async {
+    try {
+      if (_announcementData == null) return;
+
+      bool unread =
+      await AnnouncementManager.hasUnread(_announcementData.data);
+
+      if (!mounted) return;
+
+      setState(() {
+        _showRedDot = unread;
+      });
+    } catch (e) {
+      debugPrint('公告初始化异常: $e');
+    }
+  }
 
   @override
   void dispose() {
@@ -39,174 +70,292 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: CloudColors.bg,
-      resizeToAvoidBottomInset: false,
-      floatingActionButton: FloatingActionButton(
-        child: const Text('客服'),
-        onPressed: () async {
-          if (Platform.isMacOS || Platform.isWindows) {
-            final webView = await WebviewWindow.create(
-              configuration: CreateConfiguration(
-                windowHeight: 680,
-                windowWidth: 580,
-                title: "客服",
-                titleBarTopPadding: Platform.isMacOS ? 20 : 0,
-              ),
-            );
-            webView.launch(
-              'https://go.crisp.chat/chat/embed/?website_id=36c7c66a-f768-4354-9823-5aaefec60c81',
-            );
-          } else {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CloudCustomerServicePage()),
-            );
+  /// ===== 公告 icon =====
+  Widget _buildAnnouncementIcon() {
+    return Positioned(
+      top: 50,
+      right: 16,
+      child: GestureDetector(
+        onTap: () {
+          if (_announcementData != null) {
+            _showAnnouncementDialog(_announcementData);
           }
         },
-      ),
-      body: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onTap: () => _hideKeyboard(context),
-        child: Column(
+        child: Stack(
+          clipBehavior: Clip.none,
           children: [
-            const SizedBox(height: 115),
-            Image.asset(Assets.images.iconLoginTop.path, width: 65, height: 65),
-            const SizedBox(height: 18),
-            // 邮箱输入框
-            _buildTextField(
-              controller: _emailController,
-              hint: '邮箱',
-              keyboardType: TextInputType.emailAddress,
-              suffix: !_isEmailEmpty
-                  ? InkWell(
-                onTap: () => setState(() => _emailController.clear()),
-                child: SizedBox(
-                  width: 48,
-                  height: 48,
-                  child: Center(
-                    child: Image.asset(
-                      Assets.images.iconClear.path,
-                      width: 16,
-                      height: 16,
-                    ),
-                  ),
+            const Row(
+              children: [
+                Icon(
+                  Icons.volume_up,
+                  size: 22,
+                  color: CloudColors.white,
                 ),
-              )
-                  : null,
-              onTap: _onEmailFieldTap,
-            ),
-            const SizedBox(height: 12),
-            // 密码输入框
-            _buildTextField(
-              controller: _pwdController,
-              hint: '密码',
-              obscureText: _obscure,
-              suffix: !_isPasswordEmpty
-                  ? InkWell(
-                onTap: () => setState(() => _obscure = !_obscure),
-                child: SizedBox(
-                  width: 48,
-                  height: 48,
-                  child: Center(
-                    child: Image.asset(
-                      _obscure
-                          ? Assets.images.iconEyeClosed.path
-                          : Assets.images.iconEyeOpened.path,
-                      width: 20,
-                      height: 20,
-                    ),
-                  ),
-                ),
-              )
-                  : null,
-            ),
-            const SizedBox(height: 15),
-            // 登录按钮
-            GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTap: () => _login(context),
-              child: Container(
-                height: 50,
-                width: double.infinity,
-                margin: const EdgeInsets.symmetric(horizontal: 18),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(25),
-                  gradient: const LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: [CloudColors.c3257FF, CloudColors.c24D4F3],
-                  ),
-                ),
-                child: const Center(
-                  child: Text(
-                    '登录',
-                    style: TextStyle(color: CloudColors.white, fontSize: 15),
-                  ),
-                ),
-              ),
-            ),
-            // 忘记密码
-            GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CloudResetPasswordPage()),
-              ),
-              child: const Padding(
-                padding: EdgeInsets.all(14),
-                child: Text(
-                  '忘记密码',
-                  style: TextStyle(fontSize: 13, color: CloudColors.white),
-                ),
-              ),
-            ),
-            const Spacer(), // 自动填充空间，避免写死 50px
-            // 创建账户
-            GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CloudRegisterPage()),
-              ),
-              child: const Padding(
-                padding: EdgeInsets.all(14),
-                child: Text(
-                  '创建账户',
-                  style: TextStyle(fontSize: 13, color: CloudColors.c3254FF),
-                ),
-              ),
-            ),
-            // 官网入口
-            GestureDetector(
-              onTap: () async {
-                const url = 'https://fastfly.club';
-                if (await canLaunchUrl(Uri.parse(url))) {
-                  await launchUrl(Uri.parse(url),
-                      mode: LaunchMode.externalApplication);
-                } else {
-                  CloudToast.show('无法打开官网', context);
-                }
-              },
-              child: const Padding(
-                padding: EdgeInsets.only(bottom: 40),
-                child: Text(
-                  '永久跳转网站:fastfly.club',
+                SizedBox(width: 4),
+                Text(
+                  '公告',
                   style: TextStyle(
-                    fontSize: 13,
-                    color: CloudColors.c3254FF,
-                    decoration: TextDecoration.underline,
+                    color: CloudColors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+
+            /// 红点
+            if (_showRedDot)
+              Positioned(
+                right: -6,
+                top: -4,
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
                   ),
                 ),
               ),
-            ),
           ],
         ),
       ),
     );
   }
+  /// ===== 公告弹窗 =====
+  void _showAnnouncementDialog(CloudVersionModel model) async {
+    await showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          title: Text(model.data?.title ?? "公告"),
+          content: SingleChildScrollView(
+            child: Text(model.data?.content ?? ""),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                final urlStr = (model.data?.imgUrl?.isNotEmpty ?? false)
+                    ? model.data!.imgUrl!
+                    : '';
+                if (urlStr.isEmpty) {
+                  Navigator.pop(context);
+                  return;
+                }
+
+                if (await canLaunchUrl(Uri.parse(urlStr))) {
+                  await launchUrl(
+                    Uri.parse(urlStr),
+                    mode:
+                    LaunchMode.externalApplication,
+                  );
+                  Navigator.pop(context);
+                } else {
+                  CloudToast.show('无法打开官网', context);
+                }
+              },
+              child: Text(model.data?.btnTitle ?? "关闭"),
+            ),
+          ],
+        );
+      },
+    );
+
+    await AnnouncementManager.markAsRead();
+
+    if (mounted) {
+      setState(() {
+        _showRedDot = false;
+      });
+    }
+  }
+
+
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: CloudColors.bg,
+      resizeToAvoidBottomInset: false,
+      floatingActionButton:_buildServiceButton(),
+      body: Stack(
+        children: [
+          _buildBody(context),
+          _buildAnnouncementIcon(),
+        ],
+      ),
+
+    );
+  }
+
+
+  /// ===== 原页面UI =====
+  Widget _buildBody(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onTap: () => _hideKeyboard(context),
+      child: Column(
+        children: [
+          const SizedBox(height: 115),
+          Image.asset(Assets.images.iconLoginTop.path, width: 65, height: 65),
+          const SizedBox(height: 18),
+          // 邮箱输入框
+          _buildTextField(
+            controller: _emailController,
+            hint: '邮箱',
+            keyboardType: TextInputType.emailAddress,
+            suffix: !_isEmailEmpty
+                ? InkWell(
+              onTap: () => setState(() => _emailController.clear()),
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: Center(
+                  child: Image.asset(
+                    Assets.images.iconClear.path,
+                    width: 16,
+                    height: 16,
+                  ),
+                ),
+              ),
+            )
+                : null,
+            onTap: _onEmailFieldTap,
+          ),
+          const SizedBox(height: 12),
+          // 密码输入框
+          _buildTextField(
+            controller: _pwdController,
+            hint: '密码',
+            obscureText: _obscure,
+            suffix: !_isPasswordEmpty
+                ? InkWell(
+              onTap: () => setState(() => _obscure = !_obscure),
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: Center(
+                  child: Image.asset(
+                    _obscure
+                        ? Assets.images.iconEyeClosed.path
+                        : Assets.images.iconEyeOpened.path,
+                    width: 20,
+                    height: 20,
+                  ),
+                ),
+              ),
+            )
+                : null,
+          ),
+          const SizedBox(height: 15),
+          // 登录按钮
+          GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () => _login(context),
+            child: Container(
+              height: 50,
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 18),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(25),
+                gradient: const LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [CloudColors.c3257FF, CloudColors.c24D4F3],
+                ),
+              ),
+              child: const Center(
+                child: Text(
+                  '登录',
+                  style: TextStyle(color: CloudColors.white, fontSize: 15),
+                ),
+              ),
+            ),
+          ),
+          // 忘记密码
+          GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CloudResetPasswordPage()),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.all(14),
+              child: Text(
+                '忘记密码',
+                style: TextStyle(fontSize: 13, color: CloudColors.white),
+              ),
+            ),
+          ),
+          const Spacer(), // 自动填充空间，避免写死 50px
+          // 创建账户
+          GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CloudRegisterPage()),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.all(14),
+              child: Text(
+                '创建账户',
+                style: TextStyle(fontSize: 13, color: CloudColors.c3254FF),
+              ),
+            ),
+          ),
+          // 官网入口
+          GestureDetector(
+            onTap: () async {
+              const url = 'https://fastfly.club';
+              if (await canLaunchUrl(Uri.parse(url))) {
+                await launchUrl(Uri.parse(url),
+                    mode: LaunchMode.externalApplication);
+              } else {
+                CloudToast.show('无法打开官网', context);
+              }
+            },
+            child: const Padding(
+              padding: EdgeInsets.only(bottom: 40),
+              child: Text(
+                '永久跳转网站:fastfly.club',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: CloudColors.c3254FF,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ===== 客服按钮 =====
+  Widget _buildServiceButton() {
+    return FloatingActionButton(
+      child: const Text('客服'),
+      onPressed: () async {
+        if (Platform.isMacOS || Platform.isWindows) {
+          final webView = await WebviewWindow.create(
+            configuration: CreateConfiguration(
+              windowHeight: 680,
+              windowWidth: 580,
+              title: '客服',
+              titleBarTopPadding: Platform.isMacOS ? 20 : 0,
+            ),
+          );
+          webView.launch(
+              'https://go.crisp.chat/chat/embed/?website_id=36c7c66a-f768-4354-9823-5aaefec60c81');
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => const CloudCustomerServicePage()),
+          );
+        }
+      },
+    );
+  }
+
 
   Widget _buildTextField({
     required TextEditingController controller,
