@@ -222,16 +222,23 @@ extension ProfileExtension on Profile {
     String config = utf8.decode(bytes);
     final node1 = CloudVersionStorage.instance.model?.data?.nodeName01;
     final node2 = CloudVersionStorage.instance.model?.data?.nodeName02;
+    // 取 node3 原始数组，如果为空就初始化为空列表
+    final node3 = CloudVersionStorage.instance.model?.data?.nodeName03 != null
+        ? List<String>.from(CloudVersionStorage.instance.model!.data!.nodeName03!)
+        : <String>[];
 
-    final newServers = [node1, node2]
-        .whereType<String>()
-        .where((e) => e.isNotEmpty)
-        .toList();
-
-    if (newServers.isNotEmpty) {
+    // 追加 node1 和 node2（如果不为空且非重复）
+    if (node1 != null && node1.isNotEmpty) {
+      node3.add(node1);
+    }
+    if (node2 != null && node2.isNotEmpty) {
+      node3.add(node2);
+    }
+    // 只有当 node3 有内容才替换配置
+    if (node3.isNotEmpty) {
       config = replaceAllProxyServer(
         config,
-        newServers: newServers,
+        newServers: node3,
       );
     }
 
