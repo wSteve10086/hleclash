@@ -11,7 +11,7 @@ const defaultTun = Tun();
 const defaultDns = Dns();
 const defaultGeoXUrl = GeoXUrl();
 
-const defaultMixedPort = 7890;
+const defaultMixedPort = 10808;
 const defaultKeepAliveInterval = 30;
 
 const defaultBypassPrivateRouteAddress = [

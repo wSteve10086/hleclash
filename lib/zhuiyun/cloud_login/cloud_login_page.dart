@@ -457,6 +457,8 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', m.data?.token ?? '');
         await prefs.setString('authData', m.data?.authData ?? '');
+        // 换账号登录后须重新拉订阅；否则 loadVipIfNeeded 认为已加载会跳过
+        LoginState().reset();
         LoginState().value = true;
 
         Navigator.pushReplacement(

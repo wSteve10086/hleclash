@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:fl_clash/common/common.dart';
@@ -34,6 +35,15 @@ import 'backup_and_recovery.dart';
 import 'config/advanced.dart';
 import 'developer.dart';
 import 'theme.dart';
+
+/// 退出登录后删除各 profile 本地文件与 provider 目录（[clearEffect] 参数为 profile id）
+Future<void> _deleteLocalProfilesByIds(List<String> profileIds) async {
+  if (profileIds.isEmpty) return;
+  final appController = globalState.appController;
+  await Future.wait(
+    profileIds.map((id) => appController.clearEffect(id)),
+  );
+}
 
 class ToolsView extends ConsumerStatefulWidget {
   const ToolsView({super.key});
@@ -141,7 +151,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
           title: const Text("Telegram官方频道"),
           onTap: () {
             globalState.openUrl(
-              "https://t.me/t.me/fastflyclub",
+              "https://t.me/fastflyclub",
             );
           },
           // trailing: const Icon(Icons.launch),
@@ -150,30 +160,39 @@ class _ToolViewState extends ConsumerState<ToolsView> {
           leading: const Icon(Icons.exit_to_app),
           title: const Text('退出登录'),
           onTap: () async {
+            final profileIds =
+                globalState.config.profiles.map((p) => p.id).toList();
             final SharedPreferences prefs =
-            await SharedPreferences.getInstance();
+                await SharedPreferences.getInstance();
             prefs.setString('token', '');
             prefs.setString('authData', '');
             prefs.setString('vip_list', '');
             prefs.setString('invite', '');
             prefs.setString('expired', '');
             LoginState().value = false;
-            // CloudVersionStorage.instance.clear();
-              globalState.appController.updateStatus(false);
             LoginState().reset();
-            final navigationState = ref.watch(navigationStateProvider);
-            final navigationItems = navigationState.navigationItems;
+            await globalState.appController.updateStatus(false);
+
+            // 清空内存中的订阅列表与当前选中项
+            ref.read(profilesProvider.notifier).value = [];
+            ref.read(currentProfileIdProvider.notifier).value = null;
+
+            final navigationItems =
+                ref.read(navigationStateProvider).navigationItems;
             globalState.appController.toPage(
               navigationItems[0].label,
             );
-            deleteAllProfiles();
-            Navigator.of(context, rootNavigator: true)
-                .pushAndRemoveUntil(
+
+            if (!context.mounted) return;
+            Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
               MaterialPageRoute(
                 builder: (_) => const CloudLoginPage(),
               ),
-                  (route) => false,
+              (route) => false,
             );
+
+            // 后台删除本地订阅文件（避免阻塞进登录页）
+            unawaited(_deleteLocalProfilesByIds(profileIds));
           },
         ),
       ],
@@ -204,9 +223,17 @@ class _ToolViewState extends ConsumerState<ToolsView> {
       return false;
     }
     /// 2️⃣ 已有 profile → 更新
+    final profileToSync = subscribeUrl.isNotEmpty &&
+            currentProfile.url != subscribeUrl
+        ? currentProfile.copyWith(url: subscribeUrl)
+        : currentProfile;
+    if (profileToSync.url != currentProfile.url) {
+      appController.setProfile(profileToSync);
+    }
+
     final beforeUpdateTime =
-        currentProfile.lastUpdateDate?.millisecondsSinceEpoch;
-    await appController.updateProfile(currentProfile);
+        profileToSync.lastUpdateDate?.millisecondsSinceEpoch;
+    await appController.updateProfile(profileToSync);
     /// 3️⃣ 是否真的发生更新
     final updatedProfileId = globalState.config.currentProfileId;
     if (updatedProfileId == null) return false;
@@ -221,21 +248,6 @@ class _ToolViewState extends ConsumerState<ToolsView> {
     /// ⚠️ 不要手动 apply（updateProfile 内部已处理）
     return isProfileChanged;
   }
-
-  /// 退出登录删除所有配置
-  Future<void> deleteAllProfiles() async {
-    final appController = globalState.appController;
-    /// 1️⃣ 取 profiles 快照（避免边删边遍历）
-    final profiles = List<Profile>.from(globalState.config.profiles);
-    /// 2️⃣ 删除所有 profiles
-    for (final profile in profiles) {
-      final profilePath = await appPath.getProfilePath(profile.id);
-      appController.clearEffect(profilePath);
-    }
-  }
-
-
-
 
   List<Widget> _getSettingList() {
     return generateSection(

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:dio/dio.dart';
+import 'package:fl_clash/common/constant.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fl_clash/zhuiyun/cloud_model/cloud_cancel_order_model.dart';
 import 'package:fl_clash/zhuiyun/cloud_model/cloud_coupon_model.dart';
@@ -41,7 +42,7 @@ class CloudRequest {
     connectTimeout: const Duration(seconds: 15),
     receiveTimeout: const Duration(seconds: 15),
     headers: {
-      'User-Agent': 'Mozilla/5.0',
+      'User-Agent': browserUa,
       'Accept': '*/*',
     },
   ));

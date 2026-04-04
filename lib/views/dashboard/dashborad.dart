@@ -349,10 +349,19 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     }
 
     /// 2️⃣ 已有 profile → 更新
-    final beforeUpdateTime =
-        currentProfile.lastUpdateDate?.millisecondsSinceEpoch;
+    // 换账号后 API 的订阅链接会变；仍用旧 url 拉取则文件不会更新
+    final profileToSync = subscribeUrl.isNotEmpty &&
+            currentProfile.url != subscribeUrl
+        ? currentProfile.copyWith(url: subscribeUrl)
+        : currentProfile;
+    if (profileToSync.url != currentProfile.url) {
+      appController.setProfile(profileToSync);
+    }
 
-    await appController.updateProfile(currentProfile);
+    final beforeUpdateTime =
+        profileToSync.lastUpdateDate?.millisecondsSinceEpoch;
+
+    await appController.updateProfile(profileToSync);
 
     /// 3️⃣ 是否真的发生更新
     final updatedProfileId = globalState.config.currentProfileId;
@@ -542,7 +551,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 /// 🔝 顶部 View（Header）
-                (version?.data?.show ==1)?
+                (version?.data?.show !=0)?
                 Padding(
                   padding: const EdgeInsets.all(5),
                   child: Column(

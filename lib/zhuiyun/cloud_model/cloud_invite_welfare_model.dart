@@ -12,8 +12,8 @@ class CloudInviteWelfareModel {
   }
 
   CloudInviteWelfareModel.fromJson(Map<String, dynamic> json) {
-    _status = json['status'] as String?;
-    _message = json['message'] as String?;
+    _status = json['status']?.toString();
+    _message = json['message']?.toString();
     _data = json['data'] != null ? Data.fromJson(json['data']) : null;
     _error = json['error'];
   }
@@ -57,33 +57,50 @@ class Data {
   Data({
     List<Codes>? codes,
     List<num>? stat,
+    String? inviteCode,
   }) {
     _codes = codes;
     _stat = stat;
+    _inviteCode = inviteCode;
   }
 
   Data.fromJson(dynamic json) {
-    if (json['codes'] != null) {
+    final map = json is Map<String, dynamic> ? json : <String, dynamic>{};
+    if (map['codes'] != null) {
       _codes = [];
-      json['codes'].forEach((v) {
-        _codes?.add(Codes.fromJson(v as Map<String, dynamic>));
-      });
+      final raw = map['codes'];
+      if (raw is List) {
+        for (final v in raw) {
+          if (v is Map<String, dynamic>) {
+            _codes?.add(Codes.fromJson(v));
+          }
+        }
+      } else if (raw is Map<String, dynamic>) {
+        _codes?.add(Codes.fromJson(raw));
+      }
     }
     _stat =
-        json['stat'] != null ? (json['stat'] as List<dynamic>).cast<num>() : [];
+        map['stat'] != null ? (map['stat'] as List<dynamic>).cast<num>() : [];
+    _inviteCode = map['invite_code'] as String? ??
+        map['inviteCode'] as String? ??
+        map['code'] as String?;
   }
   List<Codes>? _codes;
   List<num>? _stat;
+  String? _inviteCode;
   Data copyWith({
     List<Codes>? codes,
     List<num>? stat,
+    String? inviteCode,
   }) =>
       Data(
         codes: codes ?? _codes,
         stat: stat ?? _stat,
+        inviteCode: inviteCode ?? _inviteCode,
       );
   List<Codes>? get codes => _codes;
   List<num>? get stat => _stat;
+  String? get inviteCode => _inviteCode;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
@@ -91,6 +108,7 @@ class Data {
       map['codes'] = _codes?.map((v) => v.toJson()).toList();
     }
     map['stat'] = _stat;
+    map['invite_code'] = _inviteCode;
     return map;
   }
 }
@@ -121,7 +139,8 @@ class Codes {
 
   Codes.fromJson(Map<String, dynamic> json) {
     _userId = json['user_id'] as num?;
-    _code = json['code'] as String?;
+    final c = json['code'];
+    _code = c is String ? c : c?.toString();
     _pv = json['pv'] as num?;
     _status = json['status'] as num?;
     _createdAt = json['created_at'] as num?;

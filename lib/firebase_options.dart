@@ -53,7 +53,7 @@ class DefaultFirebaseOptions {
     apiKey: 'AIzaSyBiNuTNwCzEkVZ1xgc4kj79eeQXdsL4gFg',
     appId: '1:477734674979:android:6c037a344b839657894796',
     messagingSenderId: '477734674979',
-    projectId: 'zy-next',
+    projectId: 'fastfly',
     storageBucket: 'zy-next.appspot.com',
   );
 

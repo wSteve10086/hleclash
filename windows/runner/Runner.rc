@@ -92,10 +92,10 @@ BEGIN
             VALUE "CompanyName", "com.fastfly" "\0"
             VALUE "FileDescription", "Fastfly" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "clash" "\0"
+            VALUE "InternalName", "Fastfly" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2023 com.fastfly. All rights reserved." "\0"
             VALUE "OriginalFilename", "Fastfly.exe" "\0"
-            VALUE "ProductName", "clash" "\0"
+            VALUE "ProductName", "Fastfly" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

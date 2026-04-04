@@ -31,59 +31,81 @@ class _CloudInvitePageState extends State<CloudInvitePage> {
     _loadData();
   }
 
+  String _inviteCodeFromModel(CloudInviteWelfareModel? m) {
+    final d = m?.data;
+    if (d == null) return '';
+    final direct = d.inviteCode?.trim();
+    if (direct != null && direct.isNotEmpty) return direct;
+    final list = List<Codes>.from(d.codes ?? []);
+    list.sort(
+      (a, b) => (b.updatedAt ?? b.createdAt ?? 0)
+          .compareTo(a.updatedAt ?? a.createdAt ?? 0),
+    );
+    for (final c in list) {
+      final s = c.code?.trim();
+      if (s != null && s.isNotEmpty) return s;
+    }
+    return '';
+  }
+
   Future<void> _loadData() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final vipList = prefs.getString('invite') ?? '';
-    if (vipList.isNotEmpty) {
-      final model = CloudInviteWelfareModel.fromJson(
-          jsonDecode(vipList) as Map<String, dynamic>);
-      if (mounted) {
-        setState(() {
-          _statList = model.data?.stat ?? [];
-          var codes = model.data?.codes ?? [];
-          if (codes.isNotEmpty) {
-            _inviteCode = codes.last.code ?? '';
-          }
-        });
-      }
-      return;
-    }
-    if (mounted) {
-      setState(() {
-        _loading = true;
-      });
-    }
-    CloudRequest().getInviteWelfare().then((CloudInviteWelfareModel m) async {
-      if (m.status == 'success') {
+    final prefs = await SharedPreferences.getInstance();
+    final cached = prefs.getString('invite') ?? '';
+    if (cached.isNotEmpty) {
+      try {
+        final model = CloudInviteWelfareModel.fromJson(
+          jsonDecode(cached) as Map<String, dynamic>,
+        );
         if (mounted) {
           setState(() {
-            _loading = false;
-            _statList = m.data?.stat ?? [];
-            var codes = m.data?.codes ?? [];
-            if (codes.isNotEmpty) {
-              _inviteCode = codes.last.code ?? '';
-            }
+            _statList = model.data?.stat ?? [];
+            _inviteCode = _inviteCodeFromModel(model);
           });
-          prefs.setString('invite', jsonEncode(m.toJson()));
         }
-      } else {
-        CloudToast.show(m.error.toString(), context);
-      }
-      // loading.remove();
-    }).catchError((e) {
-      if (mounted) {
+      } catch (_) {}
+    }
+
+    if (!mounted) return;
+    setState(() => _loading = true);
+
+    try {
+      final m = await CloudRequest().getInviteWelfare();
+      if (!mounted) return;
+      final ok = m.status == 'success' ||
+          m.status == '1' ||
+          (m.data != null &&
+              ((m.data!.codes?.isNotEmpty ?? false) ||
+                  (m.data!.inviteCode?.trim().isNotEmpty ?? false)));
+      if (ok) {
         setState(() {
           _loading = false;
+          _statList = m.data?.stat ?? [];
+          _inviteCode = _inviteCodeFromModel(m);
         });
+        await prefs.setString('invite', jsonEncode(m.toJson()));
+      } else {
+        setState(() => _loading = false);
+        CloudToast.show(m.error?.toString() ?? '加载失败', context);
       }
-      DioException error = e;
-      var map = error.response?.data ?? {'message': '数据异常'};
-      CloudToast.show(map['message'].toString(), context);
-    });
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+      final err = e is DioException ? e : null;
+      final map = err?.response?.data is Map
+          ? Map<String, dynamic>.from(err!.response!.data as Map)
+          : <String, dynamic>{'message': '数据异常'};
+      if (mounted) {
+        CloudToast.show(map['message']?.toString() ?? '数据异常', context);
+      }
+    }
 
-    CloudRequest().getInviteUsers().then((CloudInviteUsersModel m) async {
-      _usersModel = m;
-    }).catchError((e) {});
+    try {
+      final users = await CloudRequest().getInviteUsers();
+      if (mounted) {
+        setState(() => _usersModel = users);
+      }
+    } catch (_) {}
   }
 
   @override

@@ -253,7 +253,7 @@ class _CloudSettingPageState extends State<CloudSettingPage> {
                               color: CloudColors.white, fontSize: 14),
                         ),
                         Image.asset(
-                          'assets/icon_next.png',
+                          'assets/images/icon_next.png',
                           width: 14,
                           height: 14,
                         ),
@@ -287,7 +287,7 @@ class _CloudSettingPageState extends State<CloudSettingPage> {
                               color: CloudColors.white, fontSize: 14),
                         ),
                         Image.asset(
-                          'assets/icon_next.png',
+                          'assets/images/icon_next.png',
                           width: 14,
                           height: 14,
                         ),
@@ -321,7 +321,7 @@ class _CloudSettingPageState extends State<CloudSettingPage> {
                               color: CloudColors.white, fontSize: 14),
                         ),
                         Image.asset(
-                          'assets/icon_next.png',
+                          'assets/images/icon_next.png',
                           width: 14,
                           height: 14,
                         ),
@@ -355,7 +355,7 @@ class _CloudSettingPageState extends State<CloudSettingPage> {
                               color: CloudColors.white, fontSize: 14),
                         ),
                         Image.asset(
-                          'assets/icon_next.png',
+                          'assets/images/icon_next.png',
                           width: 14,
                           height: 14,
                         ),

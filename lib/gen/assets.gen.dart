@@ -58,9 +58,6 @@ class $AssetsImagesGen {
   /// Directory path: assets/images/icon
   $AssetsImagesIconGen get icon => const $AssetsImagesIconGen();
 
-  /// File path: assets/images/icon.ico
-  String get iconIco => 'assets/images/icon.ico';
-
   /// File path: assets/images/icon.png
   AssetGenImage get iconPng => const AssetGenImage('assets/images/icon.png');
 
@@ -71,10 +68,6 @@ class $AssetsImagesGen {
   /// File path: assets/images/icon_back.png
   AssetGenImage get iconBack =>
       const AssetGenImage('assets/images/icon_back.png');
-
-  /// File path: assets/images/icon_cesu.png
-  AssetGenImage get iconCesu =>
-      const AssetGenImage('assets/images/icon_cesu.png');
 
   /// File path: assets/images/icon_clear.png
   AssetGenImage get iconClear =>
@@ -104,25 +97,13 @@ class $AssetsImagesGen {
   AssetGenImage get iconMineSelected =>
       const AssetGenImage('assets/images/icon_mine_selected.png');
 
-  /// File path: assets/images/icon_monochrome.png
-  AssetGenImage get iconMonochrome =>
-      const AssetGenImage('assets/images/icon_monochrome.png');
-
   /// File path: assets/images/icon_next.png
   AssetGenImage get iconNext =>
       const AssetGenImage('assets/images/icon_next.png');
 
-  /// File path: assets/images/icon_order.png
-  AssetGenImage get iconOrder =>
-      const AssetGenImage('assets/images/icon_order.png');
-
   /// File path: assets/images/icon_select.png
   AssetGenImage get iconSelect =>
       const AssetGenImage('assets/images/icon_select.png');
-
-  /// File path: assets/images/icon_selected.png
-  AssetGenImage get iconSelected =>
-      const AssetGenImage('assets/images/icon_selected.png');
 
   /// File path: assets/images/icon_speed.png
   AssetGenImage get iconSpeed =>
@@ -165,12 +146,10 @@ class $AssetsImagesGen {
       const AssetGenImage('assets/images/icon_vip_selected.png');
 
   /// List of all assets
-  List<dynamic> get values => [
-    iconIco,
+  List<AssetGenImage> get values => [
     iconPng,
     iconAvatar,
     iconBack,
-    iconCesu,
     iconClear,
     iconEyeClosed,
     iconEyeOpened,
@@ -178,11 +157,8 @@ class $AssetsImagesGen {
     iconLoginTop,
     iconMine,
     iconMineSelected,
-    iconMonochrome,
     iconNext,
-    iconOrder,
     iconSelect,
-    iconSelected,
     iconSpeed,
     iconSpeedSelected,
     iconStart,

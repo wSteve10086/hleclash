@@ -9,12 +9,12 @@ import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
 import 'package:flutter/material.dart';
 
-const appName = 'FlClash';
+const appName = 'Fastfly';
 const appHelperService = 'FlClashHelperService';
 const coreName = 'clash.meta';
 const browserUa =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-const packageName = 'com.follow.clash';
+const packageName = 'com.fastfly.app';
 final unixSocketPath = '/tmp/FlClashSocket_${Random().nextInt(10000)}.sock';
 const helperPort = 47890;
 const maxTextScale = 1.4;
@@ -101,9 +101,9 @@ double getWidgetHeight(num lines) {
 
 const maxLength = 1000;
 
-final mainIsolate = 'FlClashMainIsolate';
+final mainIsolate = 'FastflyMainIsolate';
 
-final serviceIsolate = 'FlClashServiceIsolate';
+final serviceIsolate = 'FastflyServiceIsolate';
 
 const defaultPrimaryColors = [
   0xFF795548,

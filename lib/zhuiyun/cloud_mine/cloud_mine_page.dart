@@ -94,7 +94,7 @@ class _CloudMinePageState extends State<CloudMinePage>
             ),
             Row(children: [
               Image.asset(
-                'assets/icon_avatar.png',
+                'assets/images/icon_avatar.png',
                 width: 48,
                 height: 48,
               ),
@@ -115,12 +115,16 @@ class _CloudMinePageState extends State<CloudMinePage>
             ),
             Container(
               height: 76.5,
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage(
-                    'assets/bg_vip_1.png',
-                  ),
-                  fit: BoxFit.fill,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                gradient: const LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    Color(0xFF3D2E24),
+                    CloudColors.c63483D,
+                    CloudColors.cBA987A,
+                  ],
                 ),
               ),
               child: Padding(
@@ -150,7 +154,7 @@ class _CloudMinePageState extends State<CloudMinePage>
                       ],
                     ),
                     Image.asset(
-                      'assets/icon_vip_mark.png',
+                      'assets/images/icon_vip_mark.png',
                       width: 81.5,
                       height: 39.5,
                     ),
@@ -200,7 +204,7 @@ class _CloudMinePageState extends State<CloudMinePage>
                           ],
                         ),
                         Image.asset(
-                          'assets/icon_next.png',
+                          'assets/images/icon_next.png',
                           width: 14,
                           height: 14,
                         ),

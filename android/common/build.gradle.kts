@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.follow.clash.common"
+    namespace = "com.fastfly.app.common"
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
