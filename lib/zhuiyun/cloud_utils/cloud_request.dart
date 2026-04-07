@@ -43,6 +43,7 @@ class CloudRequest {
     headers: {
       'User-Agent': browserUa,
       'Accept': '*/*',
+      'Connection': 'close',
     },
   ));
 
