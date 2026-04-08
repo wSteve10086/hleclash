@@ -23,4 +23,47 @@ class CloudColors {
   static const Color cBA987A = Color(0xFFBA987A);
   static const Color c32CD32 = Color(0xFF32CD32);
 
+  // Semantic color mappings for zhuiyun pages.
+  static Color appBackground(BuildContext context) =>
+      Theme.of(context).colorScheme.surface;
+
+  static Color cardBackground(BuildContext context) =>
+      Theme.of(context).colorScheme.surfaceContainerLow;
+
+  static Color textPrimary(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurface;
+
+  static Color textSecondary(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurfaceVariant;
+
+  static Color textOnPrimary(BuildContext context) =>
+      Theme.of(context).colorScheme.onPrimary;
+
+  static Color border(BuildContext context) =>
+      Theme.of(context).colorScheme.outlineVariant;
+
+  static Color overlaySurface(BuildContext context) =>
+      Theme.of(context).colorScheme.inverseSurface;
+
+  static Color overlayOnSurface(BuildContext context) =>
+      Theme.of(context).colorScheme.onInverseSurface;
+
+  static Color success(BuildContext context) =>
+      Theme.of(context).colorScheme.tertiary;
+
+  static Color error(BuildContext context) =>
+      Theme.of(context).colorScheme.error;
+
+  static Color brandPrimary(BuildContext context) =>
+      Theme.of(context).colorScheme.primary;
+
+  static Color brandSecondary(BuildContext context) =>
+      Theme.of(context).colorScheme.secondary;
+
+  static Color link(BuildContext context) => brandPrimary(context);
+
+  static Color warning(BuildContext context) =>
+      Theme.of(context).colorScheme.errorContainer;
+
+  static Color muted(BuildContext context) => textSecondary(context);
 }

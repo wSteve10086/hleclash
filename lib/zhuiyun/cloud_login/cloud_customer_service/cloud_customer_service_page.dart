@@ -3,6 +3,7 @@ import 'package:fl_clash/zhuiyun/cloud_utils/cloud_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import 'customer_service_config.dart';
 
 class CloudCustomerServicePage extends StatefulWidget {
   const CloudCustomerServicePage({super.key});
@@ -41,8 +42,7 @@ class _CloudCustomerServicePageState extends State<CloudCustomerServicePage> {
           },
         ),
       )
-      ..loadRequest(Uri.parse(
-          'https://go.crisp.chat/chat/embed/?website_id=36c7c66a-f768-4354-9823-5aaefec60c81'));
+      ..loadRequest(Uri.parse(getCustomerServiceUrl()));
     // ..loadFlutterAsset('assets/customer_service.html');
   }
 

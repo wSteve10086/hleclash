@@ -12,14 +12,16 @@ import 'package:flutter_js/quickjs/ffi.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../models/profile.dart';
 import '../../zhuiyun/cloud_model/CloudVersionStorage.dart';
+import '../../zhuiyun/cloud_model/cloud_version_model.dart';
 import '../../zhuiyun/cloud_update/cloud_download_webpage.dart';
+import '../../zhuiyun/cloud_utils/announcement_manager.dart';
 import '../../zhuiyun/cloud_utils/cloud_colors.dart';
 import '../../zhuiyun/cloud_utils/cloud_login_state.dart';
 import '../../zhuiyun/cloud_utils/cloud_request.dart';
+import '../../zhuiyun/cloud_utils/cloud_toast.dart';
 import '../../zhuiyun/cloud_vip/cloud_vip_page.dart';
 import 'widgets/start_button.dart';
 import '../../zhuiyun/cloud_state/vip_state.dart';
@@ -38,6 +40,42 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
   final key = GlobalKey<SuperGridState>();
   final _isEditNotifier = ValueNotifier<bool>(false);
   final _addedWidgetsNotifier = ValueNotifier<List<GridItem>>([]);
+  String? _announcementSyncKey;
+  bool _dashboardAnnouncementUnread = false;
+  bool _dashboardShow1Read = false;
+  final Set<String> _announcementDotClearedSigs = <String>{};
+
+  String _cloudPlatformDownloadUrl(Data? data) {
+    if (data == null) return '';
+    if (Platform.isAndroid) return data.updateAddress_android ?? '';
+    if (Platform.isIOS) return data.updateAddress_ios ?? '';
+    if (Platform.isMacOS) return data.updateAddress_mac ?? '';
+    if (Platform.isWindows) return data.updateAddress_windows ?? '';
+    return data.updateAddress ?? '';
+  }
+
+  bool _cloudRemoteVersionIsNewer(String currentVersion, String? remoteRaw) {
+    if (remoteRaw == null || remoteRaw.isEmpty) return false;
+    final remote = remoteRaw.trim().replaceFirst(RegExp(r'^v'), '');
+    final current = currentVersion.trim().replaceFirst(RegExp(r'^v'), '');
+    try {
+      return _compareVersions(current, remote) < 0;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  int _compareVersions(String current, String remote) {
+    final c = current.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    final r = remote.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    final maxLen = c.length > r.length ? c.length : r.length;
+    for (var i = 0; i < maxLen; i++) {
+      final cv = i < c.length ? c[i] : 0;
+      final rv = i < r.length ? r[i] : 0;
+      if (cv != rv) return cv.compareTo(rv);
+    }
+    return 0;
+  }
 
   @override
   void initState() {
@@ -303,7 +341,9 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
       );
 
       // 尝试更新 profile
-      final baseUrl = CloudRequest().baseUrl;
+      final baseUrl =
+          CloudVersionStorage.instance.model?.data?.subUrl ??
+          CloudRequest().baseUrl;
       final originUrl = data?.subscribeUrl ?? '';
       if (originUrl.isNotEmpty) {
         final replacedUrl = originUrl.replaceFirst(
@@ -392,62 +432,91 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
     return '${(t / 1024 / 1024 / 1024 / 1024).toStringAsFixed(2)}TB';
   }
 
-  /// 获取版本信息
+  /// 获取版本信息：仅处理版本更新（不再在这里弹公告）
   void getVersionInfo() async {
-    PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    final version = packageInfo.version;
-    // CloudRequest().getVersionInfo().then((value) async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      final localVersion = packageInfo.version;
       final data = CloudVersionStorage.instance.model?.data;
-      if (version != data?.version && data?.forcedFlag == 1) {
-        final vList = data?.versionIntroduction?.split('\n') ?? [];
-        String downloadUrl =  '';
-        if (Platform.isAndroid) {
-          downloadUrl = data?.updateAddress_android ?? '';
-        } else if (Platform.isIOS) {
-          downloadUrl = data?.updateAddress_ios ?? '';
-        } else if (Platform.isMacOS) {
-          downloadUrl = data?.updateAddress_mac ?? '';
-        } else if (Platform.isWindows) {
-          downloadUrl = data?.updateAddress_windows ?? '';
-        }
-        _cloudDialog('有新版本啦', vList, downloadUrl);
-      } else if (data?.show == 1) {
-        final prefs = await SharedPreferences.getInstance();
-        final version = CloudVersionStorage.instance.model;
-        final title = version?.data?.title ?? '';
-        final content = version?.data?.content ?? '';
-        if (prefs.getString('title') == title && prefs.getString('content') == content) return;
-        await prefs.setString('title', title);
-        await prefs.setString('content', content);
-        final vList = content.split('\n');
-        _cloudDialog(title, vList, '');
+      if (data == null) return;
+
+      final localBelowRemote =
+          _cloudRemoteVersionIsNewer(localVersion, data.version);
+      if (!localBelowRemote) return;
+
+      final flag = data.forcedFlag;
+      final vList = data.versionIntroduction?.split('\n') ?? [];
+      final downloadUrl = _cloudPlatformDownloadUrl(data);
+
+      if (flag == 2) {
+        if (!mounted) return;
+        _cloudDialog(
+          '版本更新',
+          vList,
+          downloadUrl,
+          localVersion: localVersion,
+          remoteVersion: data.version ?? localVersion,
+          isForceUpdate: true,
+        );
+        return;
       }
-    // }).catchError((_) {});
+      if (flag == 1) {
+        if (!mounted) return;
+        _cloudDialog(
+          '有新版本啦',
+          vList,
+          downloadUrl,
+          localVersion: localVersion,
+          remoteVersion: data.version ?? localVersion,
+          isForceUpdate: false,
+        );
+      }
+    } catch (e, st) {
+      debugPrint('getVersionInfo error: $e\n$st');
+    }
   }
 
-  Future<void> _cloudDialog(String title, List<String> vList, String downloadUrl) async {
+  Future<void> _cloudDialog(
+    String title,
+    List<String> vList,
+    String downloadUrl, {
+    required String localVersion,
+    required String remoteVersion,
+    bool isForceUpdate = false,
+  }) async {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     var version = packageInfo.version;
     showDialog(
       context: context,
+      barrierDismissible: !isForceUpdate,
       builder: (BuildContext c) {
-        return StatefulBuilder(
-          builder: (BuildContext ctx, StateSetter updateState) => Center(
-            child: Container(
-              height: 310,
-              margin: const EdgeInsets.all(18),
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [CloudColors.c40455D, CloudColors.c242738],
+        return PopScope(
+          canPop: !isForceUpdate,
+          child: StatefulBuilder(
+            builder: (BuildContext ctx, StateSetter updateState) => Center(
+              child: Container(
+                height: 310,
+                margin: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [CloudColors.c40455D, CloudColors.c242738],
+                  ),
                 ),
-              ),
-              child: Column(
-                children: [
+                child: Column(
+                  children: [
                   Text(title, style: const TextStyle(fontSize: 21, color: CloudColors.white, fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 6),
+                  Text(
+                    '最新版本：$remoteVersion  当前版本：$localVersion',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: CloudColors.cA4ADBD,
+                    ),
+                  ),
                   Container(
                     height: 160,
                     margin: const EdgeInsets.symmetric(vertical: 20),
@@ -458,43 +527,282 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
                       ),
                     ),
                   ),
-                  GestureDetector(
-                    behavior: HitTestBehavior.translucent,
-                    onTap: () async {
-                      if (downloadUrl.isEmpty) {
-                        Navigator.of(c).pop();
-                        return;
-                      }
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => UpdateDownloadPage( version:version, updateLogs:vList, downloadUrl: downloadUrl,),
+                  if (!isForceUpdate)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.translucent,
+                            onTap: () => Navigator.of(c).pop(),
+                            child: Container(
+                              height: 44,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(22),
+                                border: Border.all(color: CloudColors.cA4ADBD),
+                              ),
+                              child: const Text(
+                                '稍后再说',
+                                style: TextStyle(color: CloudColors.white, fontSize: 15),
+                              ),
+                            ),
+                          ),
                         ),
-                      );
-                    },
-
-                    child: Container(
-                      height: 44,
-                      width: 230,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(22),
-                        gradient: const LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          colors: [CloudColors.c63483D, CloudColors.cBA987A],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.translucent,
+                            onTap: () async {
+                              if (downloadUrl.isEmpty) {
+                                CloudToast.show('更新地址异常，请联系客服处理', context);
+                                return;
+                              }
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => UpdateDownloadPage(
+                                    version: version,
+                                    updateLogs: vList,
+                                    downloadUrl: downloadUrl,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              height: 44,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(22),
+                                gradient: const LinearGradient(
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                  colors: [CloudColors.c63483D, CloudColors.cBA987A],
+                                ),
+                              ),
+                              child: const Text(
+                                '立即更新',
+                                style: TextStyle(color: CloudColors.white, fontSize: 15),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      child: Center(
-                        child: Text(title == '版本更新' ? _btnTitle : '我知道了', style: const TextStyle(color: CloudColors.white, fontSize: 15)),
+                      ],
+                    )
+                  else
+                    GestureDetector(
+                      behavior: HitTestBehavior.translucent,
+                      onTap: () async {
+                        if (downloadUrl.isEmpty) {
+                          CloudToast.show('更新地址异常，请联系客服处理', context);
+                          return;
+                        }
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => UpdateDownloadPage(
+                              version: version,
+                              updateLogs: vList,
+                              downloadUrl: downloadUrl,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        height: 44,
+                        width: 230,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(22),
+                          gradient: const LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [CloudColors.c63483D, CloudColors.cBA987A],
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(_btnTitle, style: const TextStyle(color: CloudColors.white, fontSize: 15)),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         );
       },
+    );
+  }
+
+  bool _hasAnnouncementPayload(Data? data) {
+    if (data == null) return false;
+    final t = data.title?.trim() ?? '';
+    final c = data.content?.trim() ?? '';
+    final img = data.imgUrl?.trim() ?? '';
+    return t.isNotEmpty || c.isNotEmpty || img.isNotEmpty;
+  }
+
+  String _dashboardAnnouncementStripTitle(Data data) {
+    final t = data.title?.trim() ?? '';
+    if (t.isEmpty) return '官方公告';
+    return '官方公告：$t';
+  }
+
+  bool _dashboardAnnouncementBarVisible(Data data) {
+    if (!_hasAnnouncementPayload(data)) return false;
+    final n = data.show ?? 0;
+    if (n == 0) return false;
+    if (n == 1) return !_dashboardShow1Read;
+    return n > 1;
+  }
+
+  void _syncDashboardAnnouncementState(Data? data) {
+    if (!mounted) return;
+    if (data == null || (data.show ?? 0) == 0 || !_hasAnnouncementPayload(data)) {
+      if (_announcementSyncKey != null || _dashboardAnnouncementUnread || _dashboardShow1Read) {
+        setState(() {
+          _announcementSyncKey = null;
+          _dashboardAnnouncementUnread = false;
+          _dashboardShow1Read = false;
+        });
+      }
+      return;
+    }
+    final n = data.show ?? 0;
+    final sig = AnnouncementManager.contentSignature(data);
+    final key = '$sig|$n';
+    if (key == _announcementSyncKey) return;
+    _announcementSyncKey = key;
+    if (n == 1) {
+      AnnouncementManager.isDashboardAnnouncementRead(data).then((read) {
+        if (!mounted || _announcementSyncKey != key) return;
+        setState(() {
+          _dashboardShow1Read = read;
+          _dashboardAnnouncementUnread = !read;
+        });
+      });
+    } else if (n > 1) {
+      setState(() {
+        _dashboardShow1Read = false;
+        _dashboardAnnouncementUnread = !_announcementDotClearedSigs.contains(sig);
+      });
+    }
+  }
+
+  Future<void> _showDashboardAnnouncementDialog(CloudVersionModel model) async {
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(model.data?.title ?? '公告'),
+          content: SingleChildScrollView(
+            child: Text(model.data?.content ?? ''),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                final imgUrl = model.data?.imgUrl?.trim() ?? '';
+                if (imgUrl.isNotEmpty) {
+                  globalState.openUrl(imgUrl);
+                }
+                Navigator.of(dialogContext).pop();
+              },
+              child: Text(model.data?.btnTitle ?? '关闭'),
+            ),
+          ],
+        );
+      },
+    );
+    final d = model.data;
+    final n = d?.show ?? 0;
+    if (d != null && n == 1) {
+      await AnnouncementManager.markDashboardAnnouncementRead(d);
+      if (mounted) {
+        setState(() {
+          _dashboardShow1Read = true;
+          _dashboardAnnouncementUnread = false;
+        });
+      }
+    } else if (d != null && n > 1) {
+      final sig = AnnouncementManager.contentSignature(d);
+      if (mounted) {
+        setState(() {
+          _announcementDotClearedSigs.add(sig);
+          _dashboardAnnouncementUnread = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildAnnouncementTopStrip(CloudVersionModel? model) {
+    final data = model?.data;
+    if (data == null || !_dashboardAnnouncementBarVisible(data)) {
+      return const SizedBox.shrink();
+    }
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.45),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () {
+            if (model != null) {
+              _showDashboardAnnouncementDialog(model);
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(
+                      Icons.volume_up_rounded,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    if (_dashboardAnnouncementUnread)
+                      Positioned(
+                        right: -3,
+                        top: -3,
+                        child: Container(
+                          width: 9,
+                          height: 9,
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.surface,
+                              width: 1.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    _dashboardAnnouncementStripTitle(data),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -537,6 +845,10 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
           .toList();
     });
     final version = CloudVersionStorage.instance.model;
+    final announcementData = version?.data;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncDashboardAnnouncementState(announcementData);
+    });
     final vip = ref.watch(vipProvider);
     return _buildIsEdit(
           (isEdit) => CommonScaffold(
@@ -550,22 +862,7 @@ class _DashboardViewState extends ConsumerState<DashboardView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                /// 🔝 顶部 View（Header）
-                (version?.data?.show !=0)?
-                Padding(
-                  padding: const EdgeInsets.all(5),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start, // 左对齐
-                    children: [
-                      Text(version?.data?.title ?? '',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                        ),),
-                      Text(version?.data?.content ?? ''),
-                    ],
-                  ),
-                ):const SizedBox.shrink(),
+                _buildAnnouncementTopStrip(version),
 
                 ShopDetailSection(
                   planName: vip.planName,

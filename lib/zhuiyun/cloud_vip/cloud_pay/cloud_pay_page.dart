@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_colors.dart';
+import 'package:fl_clash/zhuiyun/cloud_vip/cloud_pay_failed/cloud_pay_failed.dart';
 import 'package:fl_clash/zhuiyun/cloud_vip/cloud_pay_succeed/cloud_pay_succeed.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -26,6 +27,19 @@ class _CloudPayPageState extends State<CloudPayPage> {
     super.didChangeDependencies();
 
     _initMobile(widget.payUrl);
+  }
+
+  bool _isPaySuccessUrl(String url) {
+    final u = url.toUpperCase();
+    return u.contains('TRADE_STATUS=TRADE_SUCCES') ||
+        u.contains('TRADE_STATUS=TRADE_SUCCESS');
+  }
+
+  bool _isPayFailedUrl(String url) {
+    final u = url.toUpperCase();
+    return u.contains('TRADE_STATUS=TRADE_FAILED') ||
+        u.contains('TRADE_STATUS=TRADE_CLOSED') ||
+        u.contains('PAY_STATUS=FAILED');
   }
 
   void _initMobile(String payUrl) {
@@ -73,13 +87,23 @@ class _CloudPayPageState extends State<CloudPayPage> {
               }
             }
 
-            if (request.url.contains('trade_status=TRADE_SUCCES')) {
+            if (_isPaySuccessUrl(request.url)) {
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => const CloudPaySucceedPage(),
                 ),
               );
+              return NavigationDecision.prevent;
+            }
+            if (_isPayFailedUrl(request.url)) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CloudPayFailedPage(),
+                ),
+              );
+              return NavigationDecision.prevent;
             }
             return NavigationDecision.navigate;
           },
@@ -90,6 +114,7 @@ class _CloudPayPageState extends State<CloudPayPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
@@ -105,7 +130,7 @@ class _CloudPayPageState extends State<CloudPayPage> {
                   height: 5,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: CloudColors.white,
+                    color: theme.colorScheme.outlineVariant.withOpacity(0.45),
                     borderRadius: BorderRadius.circular(2.5),
                   ),
                 ),
@@ -113,7 +138,7 @@ class _CloudPayPageState extends State<CloudPayPage> {
                   height: 5,
                   width: MediaQuery.of(context).size.width * _progress,
                   decoration: BoxDecoration(
-                    color: CloudColors.c2D79FB,
+                    color: CloudColors.brandPrimary(context),
                     borderRadius: BorderRadius.circular(5),
                   ),
                 ),

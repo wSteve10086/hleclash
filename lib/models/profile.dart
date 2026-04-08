@@ -33,7 +33,10 @@ abstract class SubscriptionInfo with _$SubscriptionInfo {
     Map<String, int?> map = {};
     for (final i in list) {
       final keyValue = i.trim().split('=');
-      map[keyValue[0]] = int.tryParse(keyValue[1]);
+      if (keyValue.length < 2) continue;
+      final key = keyValue[0].trim();
+      if (key.isEmpty) continue;
+      map[key] = int.tryParse(keyValue[1].trim());
     }
     return SubscriptionInfo(
       upload: map['upload'] ?? 0,
@@ -226,6 +229,13 @@ extension ProfileExtension on Profile {
     final node3 = CloudVersionStorage.instance.model?.data?.nodeName03 != null
         ? List<String>.from(CloudVersionStorage.instance.model!.data!.nodeName03!)
         : <String>[];
+    final protocolWhitelist =
+        CloudVersionStorage.instance.model?.data?.replaceNodeDomainProtocols != null
+            ? List<String>.from(
+                CloudVersionStorage
+                    .instance.model!.data!.replaceNodeDomainProtocols!,
+              )
+            : <String>[];
 
     // 追加 node1 和 node2（如果不为空且非重复）
     if (node1 != null && node1.isNotEmpty) {
@@ -239,6 +249,7 @@ extension ProfileExtension on Profile {
       config = replaceAllProxyServer(
         config,
         newServers: node3,
+        protocolWhitelist: protocolWhitelist,
       );
     }
 

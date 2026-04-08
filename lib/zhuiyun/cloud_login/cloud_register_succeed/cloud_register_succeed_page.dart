@@ -1,6 +1,7 @@
 import 'package:fl_clash/gen/assets.gen.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_app_bar.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_colors.dart';
+import 'package:fl_clash/zhuiyun/cloud_utils/cloud_theme_asset.dart';
 import 'package:flutter/material.dart';
 
 class CloudRegisterSucceedPage extends StatefulWidget {
@@ -31,14 +32,14 @@ class _CloudRegisterSucceedPageState extends State<CloudRegisterSucceedPage> {
           Navigator.popUntil(context, (route) => route.isFirst);
         },
       ),
-      backgroundColor: CloudColors.bg,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Column(
         children: [
           const SizedBox(
             width: double.infinity,
             height: 94,
           ),
-          Image.asset(
+          CloudThemeAsset(
             Assets.images.iconSucceed.path,
             width: 55,
             height: 55,
@@ -48,8 +49,8 @@ class _CloudRegisterSucceedPageState extends State<CloudRegisterSucceedPage> {
           ),
           Text(
             widget.isForgetPwd ? '重置密码成功' : '注册成功',
-            style: const TextStyle(
-              color: CloudColors.white,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 20,
             ),
           ),

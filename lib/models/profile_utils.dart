@@ -5,6 +5,7 @@ import 'package:yaml_edit/yaml_edit.dart';
 String replaceAllProxyServer(
     String config, {
       required List<String> newServers, // 新域名列表
+      List<String> protocolWhitelist = const [], // 协议白名单；空=不过滤
     }) {
   if (newServers.isEmpty) return config;
 
@@ -16,14 +17,28 @@ String replaceAllProxyServer(
 
   final editor = YamlEditor(config);
   int index = 0;
+  final whitelist = protocolWhitelist
+      .map((e) => e.trim().toLowerCase())
+      .where((e) => e.isNotEmpty)
+      .toSet();
 
   for (int i = 0; i < proxies.length; i++) {
     final proxy = proxies[i];
     if (proxy is! YamlMap) continue;
 
     final server = proxy['server'];
-    if (server is String && server.isNotEmpty) {
-      // 轮流取 newServers
+    final sni = proxy['sni'];
+    final type = proxy['type']?.toString().toLowerCase();
+
+    if (server is! String || server.isEmpty) continue;
+    if (whitelist.isNotEmpty && (type == null || !whitelist.contains(type))) {
+      continue;
+    }
+
+    // ✅ 关键：判断是否直连
+    final isDirect = (sni == null || sni == server);
+
+    if (!isDirect) {
       final replacement = newServers[index % newServers.length];
       editor.update(['proxies', i, 'server'], replacement);
       index++;

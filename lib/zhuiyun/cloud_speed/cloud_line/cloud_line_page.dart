@@ -128,14 +128,10 @@ class _CloudLinePageState extends State<CloudLinePage> {
         //   )
         //       : const Text(
         //     "线路列表",
-        //     style: TextStyle(
-        //         fontSize: 18,
-        //         color: CloudColors.white
-        //     ),
+        //     style: TextStyle(fontSize: 18),
         //   ),
         //   actions: [
         //     IconButton(
-        //       color: CloudColors.white,
         //       tooltip: "排序",
         //       icon: const Icon(Icons.sort_outlined),
         //       onPressed: sortAction,
@@ -154,16 +150,16 @@ class _CloudLinePageState extends State<CloudLinePage> {
                     itemBuilder: (_, i) {
                       var show = list[i];
                       var name = show.name;
-                      var delay = (show.delay / 3).ceil();
-                      bool isTimeout = int.parse(delay.toString()) < 0;
+                      final int delay = show.delay;
+                      final bool isTimeout = delay <= 0;
                       var readlDelay = isTimeout
                           ? null
                           : Text(
                               delay == 0 ? "超时" : delay.toString(),
                               style: TextStyle(
                                 color: delay == 0
-                                    ? CloudColors.cEA0000
-                                    : CloudColors.c32CD32,
+                                    ? CloudColors.error(context)
+                                    : CloudColors.success(context),
                               ),
                             );
                       return Padding(

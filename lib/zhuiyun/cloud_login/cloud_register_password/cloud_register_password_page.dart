@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:fl_clash/gen/assets.gen.dart';
 import 'package:fl_clash/zhuiyun/cloud_login/cloud_register_succeed/cloud_register_succeed_page.dart';
+import 'package:fl_clash/zhuiyun/cloud_login/widgets/cloud_auth_header.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_app_bar.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_colors.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_request.dart';
+import 'package:fl_clash/zhuiyun/cloud_utils/cloud_theme_asset.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_toast.dart';
 import 'package:flutter/material.dart';
 
@@ -43,29 +45,20 @@ class _CloudRegisterPasswordPageState extends State<CloudRegisterPasswordPage> {
       },
       child: Scaffold(
         appBar: const CloudAppBar(),
-        backgroundColor: CloudColors.bg,
-        body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 45),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '创建密码',
-                style: TextStyle(
-                  color: CloudColors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(
-                height: 6,
-              ),
-              const Text(
-                '请创建长度至少为6个字符的密码',
-                style: TextStyle(
-                  color: CloudColors.white,
-                  fontSize: 13,
-                ),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        body: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 460),
+              child: SingleChildScrollView(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+              const CloudAuthHeader(
+                title: '创建密码',
+                subtitle: '请创建长度至少为6个字符的密码',
               ),
               const SizedBox(
                 height: 28,
@@ -75,28 +68,27 @@ class _CloudRegisterPasswordPageState extends State<CloudRegisterPasswordPage> {
                 padding: const EdgeInsets.only(left: 15, top: 5, bottom: 5),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
-                  color: CloudColors.c242738,
-                  border: Border.all(color: CloudColors.c5E6690, width: 1),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.32),
                 ),
                 child: TextField(
                   controller: _pwdController,
-                  style:
-                      const TextStyle(fontSize: 14, color: CloudColors.white),
+                  style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
                   obscureText: _obscureText,
                   onChanged: (text) {
                     setState(() {});
                   },
                   decoration: InputDecoration(
                     hintText: '密码',
-                    hintStyle: const TextStyle(
-                        fontSize: 14, color: CloudColors.c494D67),
-                    focusedBorder: _inputBorder(),
+                    hintStyle: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    focusedBorder: _inputBorder(
+                      Theme.of(context).colorScheme.primary.withOpacity(0.9),
+                    ),
                     disabledBorder: _inputBorder(),
-                    errorBorder: _inputBorder(),
-                    focusedErrorBorder: _inputBorder(),
+                    errorBorder: _inputBorder(CloudColors.error(context)),
+                    focusedErrorBorder: _inputBorder(CloudColors.error(context)),
                     enabledBorder: _inputBorder(),
                     border: _inputBorder(),
-                    contentPadding: EdgeInsets.zero,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     suffixIcon: _pwdController.text.isEmpty
                         ? const SizedBox()
                         : InkWell(
@@ -109,12 +101,14 @@ class _CloudRegisterPasswordPageState extends State<CloudRegisterPasswordPage> {
                               width: 48,
                               height: 48,
                               child: Center(
-                                child: Image.asset(
+                                child: CloudThemeAsset(
                                   _obscureText
                                       ? Assets.images.iconEyeClosed.path
                                       : Assets.images.iconEyeOpened.path,
                                   width: 20,
                                   height: 20,
+                                  tintInLight: true,
+                                  tintInDark: true,
                                 ),
                               ),
                             ),
@@ -128,32 +122,39 @@ class _CloudRegisterPasswordPageState extends State<CloudRegisterPasswordPage> {
               GestureDetector(
                 behavior: HitTestBehavior.translucent,
                 onTap: () => widget.isForgetPwd ? _resetPwd() : _register(),
-                child: Container(
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 180),
+                  opacity: _pwdController.text.trim().isNotEmpty ? 1 : 0.55,
+                  child: Container(
                   height: 50,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(25),
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                       colors: [
-                        CloudColors.c3257FF,
-                        CloudColors.c24D4F3,
+                        Theme.of(context).colorScheme.primary,
+                        Theme.of(context).colorScheme.secondary,
                       ],
                     ),
                   ),
                   child: Center(
                     child: Text(
                       widget.isForgetPwd ? '重置密码' : '注册',
-                      style: const TextStyle(
-                        color: CloudColors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
                         fontSize: 15,
                       ),
                     ),
                   ),
                 ),
+                ),
               ),
-            ],
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -189,9 +190,7 @@ class _CloudRegisterPasswordPageState extends State<CloudRegisterPasswordPage> {
       // loading.remove();
     }).catchError((e) {
       // loading.remove();
-      DioException error = e;
-      var map = error.response?.data ?? {'message': '注册失败'};
-      CloudToast.show(map['message'].toString(), context);
+      CloudToast.show(CloudRequest.errorMessage(e, fallback: '注册失败'), context);
     });
   }
 
@@ -226,16 +225,12 @@ class _CloudRegisterPasswordPageState extends State<CloudRegisterPasswordPage> {
       // loading.remove();
       CloudToast.hideLoading(context);
 
-      DioException error = e;
-      var map = error.response?.data ?? {'message': '重置密码失败'};
-      CloudToast.show(map['message'].toString(), context);
+      CloudToast.show(CloudRequest.errorMessage(e, fallback: '重置密码失败'), context);
     });
   }
 
-  InputBorder _inputBorder() {
-    return const OutlineInputBorder(
-      borderSide: BorderSide(width: 0, color: CloudColors.transparent),
-    );
+  InputBorder _inputBorder([Color color = CloudColors.transparent]) {
+    return InputBorder.none;
   }
 
   @override

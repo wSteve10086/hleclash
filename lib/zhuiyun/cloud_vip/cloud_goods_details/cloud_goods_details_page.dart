@@ -3,6 +3,7 @@ import 'package:fl_clash/zhuiyun/cloud_mine/cloud_order/cloud_order_page.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_colors.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_request.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_toast.dart';
+import 'package:fl_clash/zhuiyun/cloud_model/cloud_coupon_model.dart' as coupon;
 import 'package:fl_clash/zhuiyun/cloud_model/cloud_order_model.dart' as o;
 import 'package:desktop_webview_window/desktop_webview_window.dart';
 import 'package:dio/dio.dart';
@@ -34,6 +35,9 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
   List<String> _goodsTypeNameList = [];
   String? selectedOption = "月付"; // 记录当前选中的选项
   String _period = 'month_price';
+  coupon.Data? _couponData;
+  bool _couponApplied = false;
+  int _couponDiscountCents = 0;
 
   BuildContext? _sheetContext;
   @override
@@ -99,6 +103,13 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
               Padding(
                   padding: const EdgeInsets.all(10.0),
                   child: Card(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        side: BorderSide(
+                          color: theme.colorScheme.outlineVariant.withOpacity(0.45),
+                        ),
+                      ),
                       child: Padding(
                         padding: const EdgeInsets.all(18.0),
                         child: Column(
@@ -106,9 +117,10 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
                           children: [
                             Text(
                               _detailDate?.name ?? '',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
+                                color: theme.colorScheme.onSurface,
                               ),
                             ),
                             const SizedBox(
@@ -122,10 +134,10 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
                                 ),
                                 Text(
                                   '￥${_getPrice()} ',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
-                                      color: CloudColors.cEA0000),
+                                      color: theme.colorScheme.error),
                                 ),
                                 const Text(
                                   '起',
@@ -147,7 +159,10 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
                                       .trim()
                                       .replaceAll('<br>', '')
                                       .replaceAll('&#x2714', '✅'),
-                                  style: const TextStyle(fontSize: 14),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: theme.colorScheme.onSurface,
+                                  ),
                                 ),
                               ),
                             ),
@@ -157,48 +172,39 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
 
 
               Padding(
-                padding: const EdgeInsets.all(0.0),
-                child: _goodsTypeList.length <2?const SizedBox(width: 0,):Wrap(
-                  spacing: 10.0, // 横向间距
-                  runSpacing: 10.0, // 纵向间距（自动换行间距）
-                  children: _goodsTypeNameList.map((option) {
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          if (selectedOption == option) {
-                            selectedOption = null; // 取消选中
-                          } else {
-                            selectedOption = option; // 更新选中的选项
-                            _period = _goodsTypeList[_goodsTypeNameList.indexOf(option)];
-                          }
-                        });
-                      },
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Checkbox(
-                            value: selectedOption == option, // 根据选中的选项设置Checkbox的状态
-                            onChanged: (selectedOption == null || selectedOption == option) ? (bool? value) {
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: _goodsTypeList.length < 2
+                    ? const SizedBox.shrink()
+                    : Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: List.generate(_goodsTypeNameList.length, (index) {
+                          final option = _goodsTypeNameList[index];
+                          return ChoiceChip(
+                            label: Text(option),
+                            selected: selectedOption == option,
+                            onSelected: (_) {
                               setState(() {
-                                if (value ?? false) {
-                                  selectedOption = option; // 更新选中的选项
-                                } else {
-                                  // selectedOption = null; // 取消选中
-                                }
+                                selectedOption = option;
+                                _period = _goodsTypeList[index];
+                                _recomputeCouponPreview();
                               });
-                            } : null, // 如果已有选中的选项且不是当前选项，禁用此 Checkbox
-                          ),
-                          Text(option),
-                        ],
+                            },
+                          );
+                        }),
                       ),
-                    );
-                  }).toList(),
-                ) ,
               ),
 
               Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: Card(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withOpacity(0.45),
+                    ),
+                  ),
                   child: SizedBox(
                     height: 60,
                     child: Row(
@@ -219,6 +225,11 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
                                 style: const TextStyle(
                                   fontSize: 16,
                                 ),
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(vertical: 10),
+                              ),
                               )),
                         ),
                         GestureDetector(
@@ -230,13 +241,13 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(12),
-                              color: CloudColors.c2D79FB,
+                              color: theme.colorScheme.primary,
                             ),
-                            child: const Text(
+                            child: Text(
                               '验证',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: CloudColors.white,
+                                color: theme.colorScheme.onPrimary,
                               ),
                             ),
                           ),
@@ -248,12 +259,20 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
               ),
               const Expanded(child: SizedBox()),
               Card(
+                elevation: 0,
+                margin: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: BorderSide(
+                    color: theme.colorScheme.outlineVariant.withOpacity(0.45),
+                  ),
+                ),
                 child: Container(
-                  padding: EdgeInsets.only(
-                    left: 18,
-                    top: 18,
-                    right: 18,
-                    bottom: 18 + (Platform.isAndroid ? 34 : 0),
+                  padding: EdgeInsets.fromLTRB(
+                    18,
+                    16,
+                    18,
+                    16 + (Platform.isAndroid ? 34 : 0),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -266,12 +285,23 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
                               fontSize: 15,
                             ),
                           ),
+                          if (_couponApplied && _couponDiscountCents > 0)
+                            Text(
+                              '￥${_formatCents(_currentPriceCents())}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: theme.colorScheme.onSurfaceVariant,
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                            ),
+                          if (_couponApplied && _couponDiscountCents > 0)
+                            const SizedBox(width: 6),
                           Text(
-                            '￥${_getPrice()}',
-                            style: const TextStyle(
+                            '￥${_formatCents(_previewPayableCents())}',
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: CloudColors.cEA0000,
+                              color: theme.colorScheme.error,
                             ),
                           ),
                         ],
@@ -284,12 +314,12 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
                           width: 90,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            color: CloudColors.c2D79FB,
+                            borderRadius: BorderRadius.circular(16),
+                            color: theme.colorScheme.primary,
                           ),
-                          child: const Text(
+                          child: Text(
                             '立即购买',
-                            style: TextStyle(color: CloudColors.white),
+                            style: TextStyle(color: theme.colorScheme.onPrimary),
                           ),
                         ),
                       ),
@@ -324,18 +354,36 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
 
 
   _checkCoupon() {
+    if (_couponController.text.trim().isEmpty) {
+      CloudToast.show('请输入优惠券码', context);
+      return;
+    }
     CloudToast.loading(context);
     CloudRequest()
         .checkCoupon(_couponController.text, widget.planId)
         .then((m) async {
       CloudToast.hideLoading(context);
       if (m.status == 'success') {
+        setState(() {
+          _couponData = m.data;
+          _couponApplied = true;
+          _recomputeCouponPreview();
+        });
         CloudToast.show('验证成功', context);
       } else {
+        setState(() {
+          _couponApplied = false;
+          _couponDiscountCents = 0;
+          _couponData = null;
+        });
         CloudToast.show('验证失败', context);
       }
     }).catchError((e) {
       CloudToast.hideLoading(context);
+      setState(() {
+        _couponApplied = false;
+        _couponDiscountCents = 0;
+      });
       DioException error = e;
       var map = error.response?.data ?? {'message': '数据异常'};
       CloudToast.show(map['message'].toString(), context);
@@ -361,11 +409,12 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
                       height: 48,
                       width: 48,
                     ),
-                    const Text(
+                    Text(
                       '确认订单',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
+                        color: CloudColors.textPrimary(context),
                       ),
                     ),
                     IconButton(
@@ -454,12 +503,15 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
                         children: [
                           const Text(
                             '支付金额',
-                            style: TextStyle(fontSize: 14,color: CloudColors.white),
+                            style: TextStyle(fontSize: 14),
 
                           ),
                           Text(
                             '￥${_getTotalAmount(_totalAmount)}',
-                            style: const TextStyle(fontSize: 14),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ],
                       ),
@@ -480,12 +532,13 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
-                      color: CloudColors.c2D79FB,
+                      color: theme.colorScheme.primary,
                     ),
-                    child: const Text(
+                    child: Text(
                       '立即支付',
                       style: TextStyle(
                         fontSize: 14,
+                        color: theme.colorScheme.onPrimary,
                       ),
                     ),
                   ),
@@ -635,34 +688,7 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
   }
 
   String _getPrice() {
-    var price = '0';
-    if(_period == 'onetime_price'){
-      price = (_detailDate?.onetimePrice ?? 0).toString();
-    }
-    else if(_period == 'month_price'){
-      price = (_detailDate?.monthPrice ?? 0).toString();
-    }
-    else if(_period == 'quarter_price'){
-      price = (_detailDate?.quarterPrice ?? 0).toString();
-    }
-    else if(_period == 'half_year_price'){
-      price = (_detailDate?.halfYearPrice ?? 0).toString();
-    }
-    else if(_period == 'year_price'){
-      price = (_detailDate?.yearPrice ?? 0).toString();
-    }
-    else if(_period == 'two_year_price'){
-      price = (_detailDate?.twoYearPrice ?? 0).toString();
-    }
-    else if(_period == 'three_year_price'){
-      price = (_detailDate?.threeYearPrice ?? 0).toString();
-    }
-
-    if (price.length >= 3) {
-      return '${price.substring(0, price.length - 2)}.${price.substring(price.length - 2)}';
-    } else {
-      return '0.00';
-    }
+    return _formatCents(_currentPriceCents());
 
     /*
     if ((_data?.onetimePrice ?? 0) > 0) {
@@ -692,6 +718,55 @@ class _CloudGoodsDetailsPageState extends State<CloudGoodsDetailsPage> {
     }
 
      */
+  }
+
+  int _currentPriceCents() {
+    if (_period == 'onetime_price') return (_detailDate?.onetimePrice ?? 0).toInt();
+    if (_period == 'month_price') return (_detailDate?.monthPrice ?? 0).toInt();
+    if (_period == 'quarter_price') return (_detailDate?.quarterPrice ?? 0).toInt();
+    if (_period == 'half_year_price') return (_detailDate?.halfYearPrice ?? 0).toInt();
+    if (_period == 'year_price') return (_detailDate?.yearPrice ?? 0).toInt();
+    if (_period == 'two_year_price') return (_detailDate?.twoYearPrice ?? 0).toInt();
+    if (_period == 'three_year_price') return (_detailDate?.threeYearPrice ?? 0).toInt();
+    return 0;
+  }
+
+  int _previewPayableCents() {
+    final base = _currentPriceCents();
+    final payable = base - _couponDiscountCents;
+    return payable < 0 ? 0 : payable;
+  }
+
+  void _recomputeCouponPreview() {
+    final base = _currentPriceCents();
+    if (!_couponApplied || _couponData == null || base <= 0) {
+      _couponDiscountCents = 0;
+      return;
+    }
+    final type = (_couponData?.type ?? 0).toInt();
+    final value = (_couponData?.value ?? 0).toDouble();
+    int discount = 0;
+    if (type == 2) {
+      // type=2: percent discount (e.g. 20 => 20% off)
+      discount = (base * (value / 100)).round();
+    } else {
+      // default: fixed amount in cents
+      discount = value.round();
+    }
+    if (discount < 0) discount = 0;
+    if (discount > base) discount = base;
+    _couponDiscountCents = discount;
+  }
+
+  String _formatCents(int cents) {
+    final safe = cents < 0 ? 0 : cents;
+    final amount = safe.toString();
+    if (amount.length >= 3) {
+      return '${amount.substring(0, amount.length - 2)}.${amount.substring(amount.length - 2)}';
+    }
+    if (amount.length == 2) return '0.$amount';
+    if (amount.length == 1) return '0.0$amount';
+    return '0.00';
   }
 
 

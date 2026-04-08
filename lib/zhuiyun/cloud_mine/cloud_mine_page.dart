@@ -1,6 +1,6 @@
-import 'package:dio/dio.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_colors.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_request.dart';
+import 'package:fl_clash/zhuiyun/cloud_utils/cloud_theme_asset.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -43,9 +43,7 @@ class _CloudMinePageState extends State<CloudMinePage>
         _email = getEmail(value.data?.email ?? '');
       });
     }).catchError((e) {
-      DioException error = e;
-      var map = error.response?.data ?? {'message': '订阅异常'};
-      CloudToast.show(map['message'].toString(), context);
+      CloudToast.show(CloudRequest.errorMessage(e, fallback: '订阅异常'), context);
     });
   }
 
@@ -93,7 +91,7 @@ class _CloudMinePageState extends State<CloudMinePage>
               height: 35,
             ),
             Row(children: [
-              Image.asset(
+              CloudThemeAsset(
                 'assets/images/icon_avatar.png',
                 width: 48,
                 height: 48,
@@ -103,8 +101,8 @@ class _CloudMinePageState extends State<CloudMinePage>
               ),
               Text(
                 _email,
-                style: const TextStyle(
-                  color: CloudColors.white,
+                style: TextStyle(
+                  color: CloudColors.textPrimary(context),
                   fontWeight: FontWeight.w500,
                   fontSize: 16,
                 ),
@@ -135,10 +133,10 @@ class _CloudMinePageState extends State<CloudMinePage>
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           '已成为追云加速VIP会员',
                           style: TextStyle(
-                            color: CloudColors.white,
+                            color: CloudColors.textPrimary(context),
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                           ),
@@ -148,12 +146,14 @@ class _CloudMinePageState extends State<CloudMinePage>
                         ),
                         Text(
                           '到期时间:$_expiredAt',
-                          style: const TextStyle(
-                              color: CloudColors.white, fontSize: 11),
+                          style: TextStyle(
+                            color: CloudColors.textPrimary(context),
+                            fontSize: 11,
+                          ),
                         ),
                       ],
                     ),
-                    Image.asset(
+                    CloudThemeAsset(
                       'assets/images/icon_vip_mark.png',
                       width: 81.5,
                       height: 39.5,
@@ -196,17 +196,19 @@ class _CloudMinePageState extends State<CloudMinePage>
                             ),
                             Text(
                               _list[index],
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
-                                color: CloudColors.white,
+                                color: CloudColors.textPrimary(context),
                               ),
                             ),
                           ],
                         ),
-                        Image.asset(
+                        CloudThemeAsset(
                           'assets/images/icon_next.png',
                           width: 14,
                           height: 14,
+                          tintInLight: true,
+                          tintInDark: true,
                         ),
                       ],
                     ),

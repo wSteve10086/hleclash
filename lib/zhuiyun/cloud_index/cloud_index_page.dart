@@ -2,6 +2,7 @@ import 'package:fl_clash/gen/assets.gen.dart';
 import 'package:fl_clash/zhuiyun/cloud_mine/cloud_mine_page.dart';
 import 'package:fl_clash/zhuiyun/cloud_speed/cloud_speed_page.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_colors.dart';
+import 'package:fl_clash/zhuiyun/cloud_utils/cloud_theme_asset.dart';
 import 'package:fl_clash/zhuiyun/cloud_vip/cloud_vip_page.dart';
 import 'package:flutter/material.dart';
 
@@ -103,7 +104,7 @@ class _IndexPageState extends State<CloudIndexPage>
                 width: MediaQuery.of(context).size.width / 3.0,
                 child: Column(
                   children: [
-                    Image.asset(
+                    CloudThemeAsset(
                       _curPage == index ? item.selectedIcon : item.icon,
                       width: 22,
                       height: 22,

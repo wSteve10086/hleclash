@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:fl_clash/gen/assets.gen.dart';
-import 'package:fl_clash/zhuiyun/cloud_utils/cloud_colors.dart';
+import 'package:fl_clash/zhuiyun/cloud_utils/cloud_theme_asset.dart';
 import 'package:flutter/material.dart';
 
 
@@ -18,7 +18,7 @@ class CloudAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     return AppBar(
       centerTitle: true,
-      backgroundColor: CloudColors.bg,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       toolbarHeight:
           kToolbarHeight + ((Platform.isMacOS || Platform.isWindows) ? 20 : 0),
       title: Text(
@@ -32,10 +32,12 @@ class CloudAppBar extends StatelessWidget implements PreferredSizeWidget {
             top: ((Platform.isMacOS || Platform.isWindows) ? 20 : 0)),
         child: IconButton(
           onPressed: () => backClick == null ? Navigator.pop(context) : backClick!(),
-          icon: Image.asset(
+          icon: CloudThemeAsset(
             Assets.images.iconBack.path,
             width: 22,
             height: 22,
+            tintInLight: true,
+            tintInDark: true,
           ),
         ),
       ),

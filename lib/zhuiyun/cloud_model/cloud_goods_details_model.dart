@@ -12,9 +12,25 @@ class CloudGoodsDetailsModel {
   }
 
   CloudGoodsDetailsModel.fromJson(Map<String, dynamic> json) {
-    _status = json['status'] as String?;
-    _message = json['message'] as String?;
-    _data = json['data'] != null ? Data.fromJson(json['data']) : null;
+    _status = json['status']?.toString();
+    _message = json['message']?.toString();
+    final rawData = json['data'];
+    if (rawData is Map<String, dynamic>) {
+      _data = Data.fromJson(rawData);
+    } else if (rawData is Map) {
+      _data = Data.fromJson(Map<String, dynamic>.from(rawData));
+    } else if (rawData is List && rawData.isNotEmpty) {
+      final first = rawData.first;
+      if (first is Map<String, dynamic>) {
+        _data = Data.fromJson(first);
+      } else if (first is Map) {
+        _data = Data.fromJson(Map<String, dynamic>.from(first));
+      } else {
+        _data = null;
+      }
+    } else {
+      _data = null;
+    }
     _error = json['error'];
   }
   String? _status;
@@ -48,6 +64,13 @@ class CloudGoodsDetailsModel {
     map['error'] = _error;
     return map;
   }
+}
+
+num? _asNum(dynamic v) {
+  if (v == null) return null;
+  if (v is num) return v;
+  if (v is String) return num.tryParse(v.trim());
+  return null;
 }
 
 /// id : 40
@@ -120,27 +143,28 @@ class Data {
   }
 
   Data.fromJson(dynamic json) {
-    _id = json['id'] as num?;
-    _groupId = json['group_id'] as num?;
-    _transferEnable = json['transfer_enable'] as num?;
-    _name = json['name'] as String?;
-    _speedLimit = json['speed_limit'] as num?;
-    _show = json['show'] as num?;
-    _sort = json['sort'] as num?;
-    _renew = json['renew'] as num?;
-    _content = json['content'] as String?;
-    _monthPrice = json['month_price'] as num?;
-    _quarterPrice = json['quarter_price'] as num?;
-    _halfYearPrice = json['half_year_price'] as num?;
-    _yearPrice = json['year_price'] as num?;
-    _twoYearPrice = json['two_year_price'] as num?;
-    _threeYearPrice = json['three_year_price'] as num?;
-    _onetimePrice = json['onetime_price'] as num?;
-    _resetPrice = json['reset_price'] as num?;
-    _resetTrafficMethod = json['reset_traffic_method'] as num?;
+    if (json is! Map) return;
+    _id = _asNum(json['id']);
+    _groupId = _asNum(json['group_id']);
+    _transferEnable = _asNum(json['transfer_enable']);
+    _name = json['name']?.toString();
+    _speedLimit = _asNum(json['speed_limit']);
+    _show = _asNum(json['show']);
+    _sort = _asNum(json['sort']);
+    _renew = _asNum(json['renew']);
+    _content = json['content']?.toString();
+    _monthPrice = _asNum(json['month_price']);
+    _quarterPrice = _asNum(json['quarter_price']);
+    _halfYearPrice = _asNum(json['half_year_price']);
+    _yearPrice = _asNum(json['year_price']);
+    _twoYearPrice = _asNum(json['two_year_price']);
+    _threeYearPrice = _asNum(json['three_year_price']);
+    _onetimePrice = _asNum(json['onetime_price']);
+    _resetPrice = _asNum(json['reset_price']);
+    _resetTrafficMethod = _asNum(json['reset_traffic_method']);
     _capacityLimit = json['capacity_limit'];
-    _createdAt = json['created_at'] as num?;
-    _updatedAt = json['updated_at'] as num?;
+    _createdAt = _asNum(json['created_at']);
+    _updatedAt = _asNum(json['updated_at']);
   }
   num? _id;
   num? _groupId;

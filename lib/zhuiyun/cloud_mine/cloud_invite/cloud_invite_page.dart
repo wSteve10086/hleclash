@@ -1,9 +1,7 @@
 import 'dart:convert';
 
-import 'package:dio/dio.dart';
 import 'package:fl_clash/zhuiyun/cloud_model/cloud_invite_users_model.dart';
 import 'package:fl_clash/zhuiyun/cloud_model/cloud_invite_welfare_model.dart';
-import 'package:fl_clash/zhuiyun/cloud_utils/cloud_colors.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_request.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_toast.dart';
 import 'package:flutter/material.dart';
@@ -91,21 +89,23 @@ class _CloudInvitePageState extends State<CloudInvitePage> {
       if (mounted) {
         setState(() => _loading = false);
       }
-      final err = e is DioException ? e : null;
-      final map = err?.response?.data is Map
-          ? Map<String, dynamic>.from(err!.response!.data as Map)
-          : <String, dynamic>{'message': '数据异常'};
       if (mounted) {
-        CloudToast.show(map['message']?.toString() ?? '数据异常', context);
+        CloudToast.show(CloudRequest.errorMessage(e), context);
       }
     }
 
     try {
       final users = await CloudRequest().getInviteUsers();
+      if (!mounted) return;
+      setState(() => _usersModel = users);
+    } catch (e) {
       if (mounted) {
-        setState(() => _usersModel = users);
+        CloudToast.show(
+          CloudRequest.errorMessage(e, fallback: '邀请数据加载失败'),
+          context,
+        );
       }
-    } catch (_) {}
+    }
   }
 
   @override
@@ -138,6 +138,7 @@ class _CloudInvitePageState extends State<CloudInvitePage> {
                   height: 10,
                 ),
                 Card(
+                  elevation: 0,
                   child: Padding(
                     padding: const EdgeInsets.all(10),
                     child: Row(
@@ -231,6 +232,7 @@ class _CloudInvitePageState extends State<CloudInvitePage> {
                   height: 10,
                 ),
                 Card(
+                  elevation: 0,
                   child: Padding(
                     padding: const EdgeInsets.all(10),
                     child: Row(
@@ -265,13 +267,13 @@ class _CloudInvitePageState extends State<CloudInvitePage> {
                                 alignment: Alignment.center,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(8),
-                                  color: CloudColors.c2D79FB,
+                                  color: theme.colorScheme.primary,
                                 ),
-                                child: const Text(
+                                child: Text(
                                   '复制邀请',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: CloudColors.white,
+                                    color: theme.colorScheme.onPrimary,
                                   ),
                                 ),
                               ),
@@ -295,13 +297,13 @@ class _CloudInvitePageState extends State<CloudInvitePage> {
                                 alignment: Alignment.center,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(12),
-                                  color: CloudColors.c2D79FB,
+                                  color: theme.colorScheme.primary,
                                 ),
-                                child: const Text(
+                                child: Text(
                                   '复制邀请码',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: CloudColors.white,
+                                    color: theme.colorScheme.onPrimary,
                                   ),
                                 ),
                               ),
@@ -327,6 +329,7 @@ class _CloudInvitePageState extends State<CloudInvitePage> {
                 ),
                 Expanded(
                   child: Card(
+                    elevation: 0,
                     child: Padding(
                       padding: const EdgeInsets.all(10),
                       child: Column(
@@ -352,9 +355,19 @@ class _CloudInvitePageState extends State<CloudInvitePage> {
                             height: 10,
                           ),
                           Expanded(
-                            child: ListView(
-                              children: List.generate(
-                                  _usersModel?.data?.length ?? 0, (index) {
+                            child: (_usersModel?.data?.isEmpty ?? true)
+                                ? Center(
+                                    child: Text(
+                                      '暂无返佣明细',
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        color: theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  )
+                                : ListView(
+                                    children: List.generate(
+                                  _usersModel?.data?.length ?? 0,
+                                  (index) {
                                 final m = _usersModel!.data![index];
                                 return Padding(
                                   padding:
@@ -379,8 +392,9 @@ class _CloudInvitePageState extends State<CloudInvitePage> {
                                     ],
                                   ),
                                 );
-                              }),
-                            ),
+                                  },
+                                ),
+                                  ),
                           ),
                         ],
                       ),

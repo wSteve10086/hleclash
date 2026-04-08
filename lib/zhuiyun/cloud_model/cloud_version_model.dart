@@ -48,6 +48,8 @@ class Data {
     String? imgUrl,
     String? baseUrl,
     String? subUrl,
+    String? customerServiceUrl,
+    List<String>? replaceNodeDomainProtocols,
     String? btnTitle,
     String? nodeName01,
     String? nodeName02,
@@ -68,6 +70,8 @@ class Data {
     _imgUrl = imgUrl;
     _baseUrl = baseUrl;
     _subUrl = subUrl;
+    _customerServiceUrl = customerServiceUrl;
+    _replaceNodeDomainProtocols = replaceNodeDomainProtocols;
     _btnTitle = btnTitle;
     _nodeName01 = nodeName01;
     _nodeName02 = nodeName02;
@@ -90,6 +94,14 @@ class Data {
     _imgUrl = json['img_url'] as String?;
     _baseUrl = json['baseUrl'] as String?;
     _subUrl = json['subUrl'] as String?;
+    _customerServiceUrl =
+        (json['customerServiceUrl'] ?? json['customer_service_url']) as String?;
+    final protocolsRaw = json['replaceNodeDomainProtocols'] ??
+        json['replace_node_domain_protocols'] ??
+        json['nodeDomainReplaceProtocols'] ??
+        json['node_domain_replace_protocols'];
+    _replaceNodeDomainProtocols =
+        (protocolsRaw as List?)?.map((e) => e.toString()).toList();
     _btnTitle = json['btnTitle'] as String?;
     _nodeName01 = json['nodeName01'] as String?;
     _nodeName02 = json['nodeName02'] as String?;
@@ -112,6 +124,8 @@ class Data {
   String? _imgUrl;
   String? _baseUrl;
   String? _subUrl;
+  String? _customerServiceUrl;
+  List<String>? _replaceNodeDomainProtocols;
   String? _btnTitle;
   String? _nodeName01;
   String? _nodeName02;
@@ -133,6 +147,8 @@ class Data {
     String? imgUrl,
     String? baseUrl,
     String? subUrl,
+    String? customerServiceUrl,
+    List<String>? replaceNodeDomainProtocols,
     String? btnTitle,
     String? nodeName01,
     String? nodeName02,
@@ -156,6 +172,9 @@ class Data {
         imgUrl: imgUrl ?? _imgUrl,
         baseUrl: baseUrl ?? _baseUrl,
         subUrl: subUrl ?? _subUrl,
+        customerServiceUrl: customerServiceUrl ?? _customerServiceUrl,
+        replaceNodeDomainProtocols:
+            replaceNodeDomainProtocols ?? _replaceNodeDomainProtocols,
         btnTitle: btnTitle ?? _btnTitle,
         nodeName01: nodeName01 ?? _nodeName01,
         nodeName02: nodeName02 ?? _nodeName02,
@@ -177,6 +196,8 @@ class Data {
   String? get imgUrl => _imgUrl;
   String? get baseUrl => _baseUrl;
   String? get subUrl => _subUrl;
+  String? get customerServiceUrl => _customerServiceUrl;
+  List<String>? get replaceNodeDomainProtocols => _replaceNodeDomainProtocols;
   String? get btnTitle => _btnTitle;
   String? get nodeName01 => _nodeName01;
   String? get nodeName02 => _nodeName02;
@@ -199,6 +220,8 @@ class Data {
     map['img_url'] = _imgUrl;
     map['baseUrl'] = _baseUrl;
     map['subUrl'] = _subUrl;
+    map['customerServiceUrl'] = _customerServiceUrl;
+    map['replaceNodeDomainProtocols'] = _replaceNodeDomainProtocols;
     map['btnTitle'] = _btnTitle;
     map['nodeName01'] = _nodeName01;
     map['nodeName02'] = _nodeName02;

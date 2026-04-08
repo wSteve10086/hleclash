@@ -16,131 +16,168 @@ class CloudFlowWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: EdgeInsets.zero,
-      children: List.generate(list.length, (index) {
-        final Data data = list[index];
-        final content = data.content ?? '';
-        final List<String> contentList = content.split('<br>\n');
-
-        return GestureDetector(
-          behavior: HitTestBehavior.translucent,
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(15, 0, 15, 10),
+      itemCount: list.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (_, index) {
+        final data = list[index];
+        return _GoodsCard(
+          data: data,
           onTap: () {
-            final num planId = data.id ?? 0;
-            if (planId <= 0) {
-              return;
-            }
-
-            Navigator.push(
-              context,
+            final planId = data.id ?? 0;
+            if (planId <= 0) return;
+            Navigator.of(context, rootNavigator: true).push(
               MaterialPageRoute(
                 builder: (context) => CloudGoodsDetailsPage(planId),
               ),
             );
           },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 15),
-            child: Card(
-              child: Container(
-                margin:
-                    const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    Text(
-                      data.name ?? '',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 5,
-                    ),
-                    Row(
+        );
+      },
+    );
+  }
+}
+
+class _GoodsCard extends StatelessWidget {
+  const _GoodsCard({required this.data, required this.onTap});
+
+  final Data data;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final rights = data.parsedContentList;
+    final visibleRights = rights.take(3).toList();
+    final extraCount = rights.length - visibleRights.length;
+    final bool isOnetimePlan = (data.onetimePrice ?? 0) > 0;
+
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 6,
+                      runSpacing: 6,
                       children: [
-                        const Text(
-                          '低至：',
-                          style: TextStyle(
-                            fontSize: 14,
-                          ),
-                        ),
                         Text(
-                          '￥${_getPrice(data)} ',
+                          data.name ?? '',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: CloudColors.cEA0000),
-                        ),
-                        const Text(
-                          '起',
-                          style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
+                        if (isOnetimePlan) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(999),
+                              color: Colors.orange.withOpacity(0.14),
+                              border: Border.all(
+                                color: Colors.orange.withOpacity(0.45),
+                              ),
+                            ),
+                            child: const Text(
+                              '限时返场',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.orange,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    buildGoodsItem(list[index]),
-                  ],
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  '低至 ￥${_getPrice(data)}',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: CloudColors.error(context),
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _buildPriceChips(context, data),
+              ),
+              const SizedBox(height: 10),
+              ...visibleRights.map(
+                (e) => Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    e,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ),
+              if (extraCount > 0)
+                Text(
+                  '还有 $extraCount 项权益，点击查看详情',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+            ],
           ),
-        );
-      }),
+        ),
+      ),
     );
   }
 
-
-  Widget buildGoodsItem(Data data) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        /// 套餐名
-        Text(
-          data.name ?? '',
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-
-        const SizedBox(height: 8),
-
-        /// 价格（⚠️ 永远用字段，不用 HTML）
-        if (data.monthPrice != null)
-          Text('月付：￥${(data.monthPrice! / 100).toStringAsFixed(2)}'),
-        if (data.quarterPrice != null)
-          Text('季付：￥${(data.quarterPrice! / 100).toStringAsFixed(2)}'),
-        if (data.halfYearPrice != null)
-          Text('半年付：￥${(data.halfYearPrice! / 100).toStringAsFixed(2)}'),
-        if (data.yearPrice != null)
-          Text('年付：￥${(data.yearPrice! / 100).toStringAsFixed(2)}'),
-
-        const SizedBox(height: 8),
-
-        /// 权益列表
-        ...data.parsedContentList.map(
-              (e) => Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: Text(e)),
-              ],
+  List<Widget> _buildPriceChips(BuildContext context, Data data) {
+    final items = <(String, num?)>[
+      ('月付', data.monthPrice),
+      ('季付', data.quarterPrice),
+      ('半年付', data.halfYearPrice),
+      ('年付', data.yearPrice),
+      ('一次性', data.onetimePrice),
+    ];
+    return items
+        .where((e) => (e.$2 ?? 0) > 0)
+        .map(
+          (e) => Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              color: CloudColors.brandPrimary(context).withOpacity(0.12),
+            ),
+            child: Text(
+              '${e.$1} ￥${((e.$2 ?? 0) / 100).toStringAsFixed(2)}',
+              style: const TextStyle(fontSize: 12),
             ),
           ),
-        ),
-      ],
-    );
+        )
+        .toList();
   }
-
 
   String _getPrice(Data data) {
     var price = '0';

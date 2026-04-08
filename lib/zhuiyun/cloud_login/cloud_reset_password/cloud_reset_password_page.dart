@@ -1,9 +1,10 @@
-import 'package:dio/dio.dart';
 import 'package:fl_clash/gen/assets.gen.dart';
 import 'package:fl_clash/zhuiyun/cloud_login/cloud_register_code/cloud_register_code_page.dart';
+import 'package:fl_clash/zhuiyun/cloud_login/widgets/cloud_auth_header.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_app_bar.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_colors.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_request.dart';
+import 'package:fl_clash/zhuiyun/cloud_utils/cloud_theme_asset.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_toast.dart';
 import 'package:flutter/material.dart';
 
@@ -32,29 +33,20 @@ class _CloudResetPasswordPageState extends State<CloudResetPasswordPage> {
       },
       child: Scaffold(
         appBar: const CloudAppBar(),
-        backgroundColor: CloudColors.bg,
-        body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 45),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '无法登录？',
-                style: TextStyle(
-                  color: CloudColors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(
-                height: 6,
-              ),
-              const Text(
-                '请输入你的邮箱账号',
-                style: TextStyle(
-                  color: CloudColors.white,
-                  fontSize: 13,
-                ),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        body: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 460),
+              child: SingleChildScrollView(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+              const CloudAuthHeader(
+                title: '无法登录？',
+                subtitle: '请输入你的邮箱账号',
               ),
               const SizedBox(
                 height: 28,
@@ -64,16 +56,11 @@ class _CloudResetPasswordPageState extends State<CloudResetPasswordPage> {
                 padding: const EdgeInsets.only(left: 15, top: 5, bottom: 5),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
-                  color: CloudColors.c242738,
-                  border: Border.all(
-                      color:
-                          _isEmail ? CloudColors.c5E6690 : CloudColors.cEA0000,
-                      width: 1),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.32),
                 ),
                 child: TextField(
                   controller: _emailController,
-                  style:
-                      const TextStyle(fontSize: 14, color: CloudColors.white),
+                  style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
                   keyboardType: TextInputType.emailAddress,
                   onChanged: (text) {
                     setState(() {
@@ -87,15 +74,16 @@ class _CloudResetPasswordPageState extends State<CloudResetPasswordPage> {
                   },
                   decoration: InputDecoration(
                     hintText: '邮箱',
-                    hintStyle: const TextStyle(
-                        fontSize: 14, color: CloudColors.c494D67),
-                    focusedBorder: _inputBorder(),
+                    hintStyle: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    focusedBorder: _inputBorder(
+                      Theme.of(context).colorScheme.primary.withOpacity(0.9),
+                    ),
                     disabledBorder: _inputBorder(),
-                    errorBorder: _inputBorder(),
-                    focusedErrorBorder: _inputBorder(),
+                    errorBorder: _inputBorder(CloudColors.error(context)),
+                    focusedErrorBorder: _inputBorder(CloudColors.error(context)),
                     enabledBorder: _inputBorder(),
                     border: _inputBorder(),
-                    contentPadding: EdgeInsets.zero,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
                     suffixIcon: _emailController.text.isEmpty
                         ? const SizedBox()
                         : InkWell(
@@ -109,10 +97,12 @@ class _CloudResetPasswordPageState extends State<CloudResetPasswordPage> {
                               width: 48,
                               height: 48,
                               child: Center(
-                                child: Image.asset(
+                                child: CloudThemeAsset(
                                   Assets.images.iconClear.path,
                                   width: 16,
                                   height: 16,
+                                  tintInLight: true,
+                                  tintInDark: true,
                                 ),
                               ),
                             ),
@@ -121,7 +111,7 @@ class _CloudResetPasswordPageState extends State<CloudResetPasswordPage> {
                 ),
               ),
               if (!_isEmail)
-                const Column(
+                Column(
                   children: [
                     SizedBox(
                       height: 8,
@@ -130,7 +120,7 @@ class _CloudResetPasswordPageState extends State<CloudResetPasswordPage> {
                       '请输入有效的邮箱',
                       style: TextStyle(
                         fontSize: 11,
-                        color: CloudColors.cEA0000,
+                        color: CloudColors.error(context),
                       ),
                     )
                   ],
@@ -141,32 +131,39 @@ class _CloudResetPasswordPageState extends State<CloudResetPasswordPage> {
               GestureDetector(
                 behavior: HitTestBehavior.translucent,
                 onTap: () => _send(),
-                child: Container(
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 180),
+                  opacity: _emailController.text.trim().isNotEmpty ? 1 : 0.55,
+                  child: Container(
                   height: 50,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(25),
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                       colors: [
-                        CloudColors.c3257FF,
-                        CloudColors.c24D4F3,
+                        Theme.of(context).colorScheme.primary,
+                        Theme.of(context).colorScheme.secondary,
                       ],
                     ),
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Text(
                       '发送验证码',
                       style: TextStyle(
-                        color: CloudColors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                         fontSize: 15,
                       ),
                     ),
                   ),
                 ),
+                ),
               ),
-            ],
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -201,16 +198,15 @@ class _CloudResetPasswordPageState extends State<CloudResetPasswordPage> {
       }
     }).catchError((e) {
       CloudToast.hideLoading(context);
-      final DioException error = e  ;
-      var map = error.response?.data ?? {'message': '发送验证码失败'};
-      CloudToast.show(map['message'].toString(), context);
+      CloudToast.show(
+        CloudRequest.errorMessage(e, fallback: '发送验证码失败'),
+        context,
+      );
     });
   }
 
-  InputBorder _inputBorder() {
-    return const OutlineInputBorder(
-      borderSide: BorderSide(width: 0, color: CloudColors.transparent),
-    );
+  InputBorder _inputBorder([Color color = CloudColors.transparent]) {
+    return InputBorder.none;
   }
 
   @override

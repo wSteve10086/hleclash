@@ -1,14 +1,16 @@
 import 'dart:io';
 import 'package:desktop_webview_window/desktop_webview_window.dart';
-import 'package:dio/dio.dart';
 import 'package:fl_clash/gen/assets.gen.dart';
 import 'package:fl_clash/pages/home.dart';
 import 'package:fl_clash/zhuiyun/cloud_login/cloud_customer_service/cloud_customer_service_page.dart';
+import 'package:fl_clash/zhuiyun/cloud_login/cloud_customer_service/customer_service_config.dart';
 import 'package:fl_clash/zhuiyun/cloud_login/cloud_register/cloud_register_page.dart';
 import 'package:fl_clash/zhuiyun/cloud_login/cloud_reset_password/cloud_reset_password_page.dart';
+import 'package:fl_clash/zhuiyun/cloud_login/widgets/cloud_auth_header.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_colors.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_login_state.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_request.dart';
+import 'package:fl_clash/zhuiyun/cloud_utils/cloud_theme_asset.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_toast.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -34,11 +36,15 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
   int _tapCount = 0;
 
   /// ===== 公告相关 =====
-  bool _showRedDot = false;
   final CloudVersionModel? _announcementData = CloudVersionStorage.instance.model;
+  bool get _showAnnouncementEntry => (_announcementData?.data?.show ?? 0) == 1;
 
   bool get _isEmailEmpty => _emailController.text.isEmpty;
   bool get _isPasswordEmpty => _pwdController.text.isEmpty;
+  bool get _canSubmit =>
+      _emailController.text.trim().isNotEmpty &&
+      _pwdController.text.trim().isNotEmpty &&
+      !_isLoggingIn;
 
   @override
   void initState() {
@@ -48,16 +54,14 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
 
   Future<void> _initAnnouncement() async {
     try {
-      if (_announcementData == null) return;
-
-      bool unread =
-      await AnnouncementManager.hasUnread(_announcementData.data);
-
-      if (!mounted) return;
-
-      setState(() {
-        _showRedDot = unread;
-      });
+      final data = _announcementData?.data;
+      if (data == null) return;
+      if (await AnnouncementManager.shouldAutoShow(data)) {
+        if (!mounted) return;
+        await _showAnnouncementDialog(_announcementData!);
+        if (!mounted) return;
+        await AnnouncementManager.markAutoShown(data);
+      }
     } catch (e) {
       debugPrint('公告初始化异常: $e');
     }
@@ -72,58 +76,39 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
 
   /// ===== 公告 icon =====
   Widget _buildAnnouncementIcon() {
+    final colorScheme = Theme.of(context).colorScheme;
     return Positioned(
       top: 50,
       right: 16,
       child: GestureDetector(
         onTap: () {
           if (_announcementData != null) {
-            _showAnnouncementDialog(_announcementData);
+            _showAnnouncementDialog(_announcementData!);
           }
         },
-        child: Stack(
-          clipBehavior: Clip.none,
+        child: Row(
           children: [
-            const Row(
-              children: [
-                Icon(
-                  Icons.volume_up,
-                  size: 22,
-                  color: CloudColors.white,
-                ),
-                SizedBox(width: 4),
-                Text(
-                  '公告',
-                  style: TextStyle(
-                    color: CloudColors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
+            Icon(
+              Icons.volume_up,
+              size: 22,
+              color: colorScheme.onSurface,
             ),
-
-            /// 红点
-            if (_showRedDot)
-              Positioned(
-                right: -6,
-                top: -4,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                ),
+            SizedBox(width: 4),
+            Text(
+              '公告',
+              style: TextStyle(
+                color: colorScheme.onSurface,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
               ),
+            ),
           ],
         ),
       ),
     );
   }
   /// ===== 公告弹窗 =====
-  void _showAnnouncementDialog(CloudVersionModel model) async {
+  Future<void> _showAnnouncementDialog(CloudVersionModel model) async {
     await showDialog(
       context: context,
       builder: (_) {
@@ -161,25 +146,19 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
       },
     );
 
-    await AnnouncementManager.markAsRead();
-
-    if (mounted) {
-      setState(() {
-        _showRedDot = false;
-      });
-    }
   }
 
 
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: CloudColors.bg,
+      backgroundColor: colorScheme.surface,
       resizeToAvoidBottomInset: false,
       floatingActionButton:_buildServiceButton(),
       body: Stack(
         children: [
           _buildBody(context),
-          _buildAnnouncementIcon(),
+          if (_showAnnouncementEntry) _buildAnnouncementIcon(),
         ],
       ),
 
@@ -189,14 +168,39 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
 
   /// ===== 原页面UI =====
   Widget _buildBody(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onTap: () => _hideKeyboard(context),
-      child: Column(
-        children: [
-          const SizedBox(height: 115),
-          Image.asset(Assets.images.iconLoginTop.path, width: 65, height: 65),
-          const SizedBox(height: 18),
+      child: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(top: 42),
+              child: Column(
+                children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18),
+            child: CloudAuthHeader(
+              title: 'FastFly',
+              subtitle: '极速连接，稳定在线',
+              titleStyle: TextStyle(
+                color: colorScheme.onSurface,
+                fontSize: 34,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.6,
+                height: 1.1,
+              ),
+              subtitleStyle: TextStyle(
+                color: CloudColors.muted(context),
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
           // 邮箱输入框
           _buildTextField(
             controller: _emailController,
@@ -209,10 +213,12 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
                 width: 48,
                 height: 48,
                 child: Center(
-                  child: Image.asset(
+                  child: CloudThemeAsset(
                     Assets.images.iconClear.path,
                     width: 16,
                     height: 16,
+                    tintInLight: true,
+                    tintInDark: true,
                   ),
                 ),
               ),
@@ -233,12 +239,14 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
                 width: 48,
                 height: 48,
                 child: Center(
-                  child: Image.asset(
+                  child: CloudThemeAsset(
                     _obscure
                         ? Assets.images.iconEyeClosed.path
                         : Assets.images.iconEyeOpened.path,
                     width: 20,
                     height: 20,
+                    tintInLight: true,
+                    tintInDark: true,
                   ),
                 ),
               ),
@@ -249,25 +257,32 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
           // 登录按钮
           GestureDetector(
             behavior: HitTestBehavior.translucent,
-            onTap: () => _login(context),
-            child: Container(
+            onTap: _canSubmit ? () => _login(context) : null,
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 180),
+              opacity: _canSubmit ? 1 : 0.55,
+              child: Container(
               height: 50,
               width: double.infinity,
               margin: const EdgeInsets.symmetric(horizontal: 18),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(25),
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
-                  colors: [CloudColors.c3257FF, CloudColors.c24D4F3],
+                  colors: [colorScheme.primary, colorScheme.secondary],
                 ),
               ),
-              child: const Center(
+              child: Center(
                 child: Text(
                   '登录',
-                  style: TextStyle(color: CloudColors.white, fontSize: 15),
+                  style: TextStyle(
+                    color: colorScheme.onPrimary,
+                    fontSize: 15,
+                  ),
                 ),
               ),
+            ),
             ),
           ),
           // 忘记密码
@@ -277,15 +292,15 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
               context,
               MaterialPageRoute(builder: (_) => const CloudResetPasswordPage()),
             ),
-            child: const Padding(
+            child: Padding(
               padding: EdgeInsets.all(14),
               child: Text(
                 '忘记密码',
-                style: TextStyle(fontSize: 13, color: CloudColors.white),
+                style: TextStyle(fontSize: 13, color: CloudColors.muted(context)),
               ),
             ),
           ),
-          const Spacer(), // 自动填充空间，避免写死 50px
+          const SizedBox(height: 26),
           // 创建账户
           GestureDetector(
             behavior: HitTestBehavior.translucent,
@@ -293,14 +308,15 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
               context,
               MaterialPageRoute(builder: (_) => const CloudRegisterPage()),
             ),
-            child: const Padding(
+            child: Padding(
               padding: EdgeInsets.all(14),
               child: Text(
                 '创建账户',
-                style: TextStyle(fontSize: 13, color: CloudColors.c3254FF),
+                style: TextStyle(fontSize: 13, color: CloudColors.link(context)),
               ),
             ),
           ),
+          const SizedBox(height: 6),
           // 官网入口
           GestureDetector(
             onTap: () async {
@@ -312,19 +328,23 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
                 CloudToast.show('无法打开官网', context);
               }
             },
-            child: const Padding(
+            child: Padding(
               padding: EdgeInsets.only(bottom: 40),
               child: Text(
                 '永久跳转网站:fastfly.club',
                 style: TextStyle(
                   fontSize: 13,
-                  color: CloudColors.c3254FF,
+                  color: CloudColors.link(context),
                   decoration: TextDecoration.underline,
                 ),
               ),
             ),
           ),
-        ],
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -332,20 +352,27 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
   /// ===== 客服按钮 =====
   Widget _buildServiceButton() {
     return FloatingActionButton(
+      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+      foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
       child: const Text('客服'),
       onPressed: () async {
         if (Platform.isMacOS || Platform.isWindows) {
-          final webView = await WebviewWindow.create(
-            configuration: CreateConfiguration(
-              windowHeight: 680,
-              windowWidth: 580,
-              title: '客服',
-              titleBarTopPadding: Platform.isMacOS ? 20 : 0,
-            ),
-          );
-          webView.launch(
-              'https://go.crisp.chat/chat/embed/?website_id=36c7c66a-f768-4354-9823-5aaefec60c81');
+          try {
+            final webView = await WebviewWindow.create(
+              configuration: CreateConfiguration(
+                windowHeight: 680,
+                windowWidth: 580,
+                title: '客服',
+                titleBarTopPadding: Platform.isMacOS ? 20 : 0,
+              ),
+            );
+            webView.launch(getCustomerServiceUrl());
+          } catch (_) {
+            if (!mounted) return;
+            CloudToast.show('无法打开客服窗口', context);
+          }
         } else {
+          if (!mounted) return;
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -365,29 +392,29 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
     Widget? suffix,
     VoidCallback? onTap,
   }) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       height: 55,
       margin: const EdgeInsets.symmetric(horizontal: 18),
       padding: const EdgeInsets.only(left: 15, top: 5, bottom: 5),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        color: CloudColors.c242738,
-        border: Border.all(color: CloudColors.c5E6690, width: 1),
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.32),
       ),
       child: TextField(
         controller: controller,
-        style: const TextStyle(fontSize: 14, color: CloudColors.white),
+        style: TextStyle(fontSize: 14, color: colorScheme.onSurface),
         keyboardType: keyboardType,
         obscureText: obscureText,
         onChanged: (_) => setState(() {}),
         onTap: onTap,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(fontSize: 14, color: CloudColors.c494D67),
-          focusedBorder: _inputBorder(),
+          hintStyle: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
+          focusedBorder: _inputBorder(colorScheme.primary.withOpacity(0.9)),
           disabledBorder: _inputBorder(),
-          errorBorder: _inputBorder(),
-          focusedErrorBorder: _inputBorder(),
+          errorBorder: _inputBorder(CloudColors.error(context)),
+          focusedErrorBorder: _inputBorder(CloudColors.error(context)),
           enabledBorder: _inputBorder(),
           border: _inputBorder(),
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -397,9 +424,8 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
     );
   }
 
-  InputBorder _inputBorder() => const OutlineInputBorder(
-    borderSide: BorderSide(width: 0, color: CloudColors.transparent),
-  );
+  InputBorder _inputBorder([Color color = CloudColors.transparent]) =>
+      InputBorder.none;
 
   void _hideKeyboard(BuildContext context) {
     final currentFocus = FocusScope.of(context);
@@ -451,6 +477,7 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
 
     try {
       final m = await CloudRequest().login(email: email, password: password);
+      if (!mounted) return;
       CloudToast.hideLoading(context);
 
       if (m.status == 'success') {
@@ -460,22 +487,23 @@ class _CloudLoginPageState extends State<CloudLoginPage> {
         // 换账号登录后须重新拉订阅；否则 loadVipIfNeeded 认为已加载会跳过
         LoginState().reset();
         LoginState().value = true;
+        if (!mounted) return;
 
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (_) => const HomePage()));
       } else {
+        if (!mounted) return;
         CloudToast.show(
             m.error?.toString() ?? '登录失败，请重启设备，在登录试试看', context);
       }
     } catch (e) {
+      if (!mounted) return;
       CloudToast.hideLoading(context);
-      String errorMsg = '登录失败，请重启设备，在登录试试看';
-      if (e is DioException) {
-        final map = e.response?.data;
-        if (map is Map && map.containsKey('message')) {
-          errorMsg = map['message'].toString();
-        }
-      }
+      final errorMsg = CloudRequest.errorMessage(
+        e,
+        fallback: '登录失败，请重启设备，在登录试试看',
+      );
+      if (!mounted) return;
       CloudToast.show(errorMsg, context);
     } finally {
       _isLoggingIn = false;

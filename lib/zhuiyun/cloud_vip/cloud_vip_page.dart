@@ -1,12 +1,11 @@
 
 import 'dart:convert';
-import 'package:dio/dio.dart';
 import 'package:fl_clash/gen/assets.gen.dart';
 import 'package:flutter/material.dart';
 
 import 'package:fl_clash/zhuiyun/cloud_model/cloud_goods_model.dart';
-import 'package:fl_clash/zhuiyun/cloud_utils/cloud_colors.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_request.dart';
+import 'package:fl_clash/zhuiyun/cloud_utils/cloud_theme_asset.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_toast.dart';
 import 'package:fl_clash/zhuiyun/cloud_vip/cloud_flow_widget.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -74,9 +73,7 @@ class _CloudVipPageState extends ConsumerState<CloudVipPage> {
       if (mounted) {
         setState(() => _loading = false);
       }
-      final DioException error = e;
-      final map = error.response?.data ?? {'message': '数据异常'};
-      CloudToast.show(map['message'].toString(), context);
+      CloudToast.show(CloudRequest.errorMessage(e), context);
     });
   }
 
@@ -97,8 +94,8 @@ class _CloudVipPageState extends ConsumerState<CloudVipPage> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
     final vip = ref.watch(vipProvider);
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('会员'),
@@ -114,62 +111,86 @@ class _CloudVipPageState extends ConsumerState<CloudVipPage> {
                 child: Column(
                   children: [
                     const SizedBox(height: 25),
-                    const Row(
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          '商店',
+                        const Text(
+                          '套餐商店',
                           style: TextStyle(
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w600,
                             fontSize: 18,
                           ),
+                        ),
+                        TextButton.icon(
+                          onPressed: _loadData,
+                          icon: const Icon(Icons.refresh, size: 16),
+                          label: const Text('刷新'),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
                     Card(
-                      child: SizedBox(
-                        height: 75,
-                        child: Padding(
-                          padding: const EdgeInsets.all(15),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        side: BorderSide(
+                          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(15),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            CloudThemeAsset(
+                              Assets.images.iconVipDefault.path,
+                              width: 40,
+                              height: 40,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Image.asset(
-                                    Assets.images.iconVipDefault.path,
-                                    width: 40,
-                                    height: 40,
+                                  Text(
+                                    getEmail(vip.email),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
-                                  const SizedBox(width: 10),
-                                  Column(
-                                    crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        getEmail(vip.email),
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        '到期时间：${vip.expiredAt}',
-                                        style: const TextStyle(fontSize: 11),
-                                      ),
-                                    ],
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '到期时间：${vip.expiredAt}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 11),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '当前套餐：${vip.planName.isEmpty ? '未开通' : vip.planName}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
                                   ),
                                 ],
                               ),
-                              Image.asset(
-                                Assets.images.iconVipFlag.path,
-                                width: 63,
-                                height: 30,
-                              ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(width: 8),
+                            CloudThemeAsset(
+                              Assets.images.iconVipFlag.path,
+                              width: 63,
+                              height: 30,
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -180,9 +201,18 @@ class _CloudVipPageState extends ConsumerState<CloudVipPage> {
 
               /// ⭐ 唯一套餐列表
               Expanded(
-                child: CloudFlowWidget(
-                  list: _priceList,
-                ),
+                child: _priceList.isEmpty && !_loading
+                    ? Center(
+                        child: Text(
+                          '暂无可购买套餐',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      )
+                    : CloudFlowWidget(
+                        list: _priceList,
+                      ),
               ),
             ],
           ),
@@ -211,6 +241,7 @@ class _CloudVipPageState extends ConsumerState<CloudVipPage> {
 //     as cloud;
 // import 'package:fl_clash/zhuiyun/cloud_utils/cloud_colors.dart';
 // import 'package:fl_clash/zhuiyun/cloud_utils/cloud_request.dart';
+// import 'package:fl_clash/zhuiyun/cloud_utils/cloud_theme_asset.dart';
 // import 'package:fl_clash/zhuiyun/cloud_utils/cloud_toast.dart';
 // import 'package:fl_clash/zhuiyun/cloud_vip/cloud_flow_widget.dart';
 // import 'package:flutter_riverpod/flutter_riverpod.dart';

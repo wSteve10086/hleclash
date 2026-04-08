@@ -1,5 +1,6 @@
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_app_bar.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_colors.dart';
+import 'package:fl_clash/zhuiyun/cloud_utils/cloud_theme_asset.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -190,11 +191,11 @@ class _CloudSettingPageState extends State<CloudSettingPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     '允许局域网',
                     style: TextStyle(
                       fontSize: 15,
-                      color: CloudColors.white,
+                      color: CloudColors.textPrimary(context),
                     ),
                   ),
                   // Switch(
@@ -209,11 +210,11 @@ class _CloudSettingPageState extends State<CloudSettingPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'IPv6',
                     style: TextStyle(
                       fontSize: 15,
-                      color: CloudColors.white,
+                      color: CloudColors.textPrimary(context),
                     ),
                   ),
                  // Switch(value: ipv6, onChanged: (v) => _core.setState(ipv6: v))
@@ -238,24 +239,28 @@ class _CloudSettingPageState extends State<CloudSettingPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       '端口',
                       style: TextStyle(
                         fontSize: 15,
-                        color: CloudColors.white,
+                        color: CloudColors.textPrimary(context),
                       ),
                     ),
                     Row(
                       children: [
                         Text(
                           'mixedPort.toString()',
-                          style: const TextStyle(
-                              color: CloudColors.white, fontSize: 14),
+                          style: TextStyle(
+                            color: CloudColors.textPrimary(context),
+                            fontSize: 14,
+                          ),
                         ),
-                        Image.asset(
+                        const CloudThemeAsset(
                           'assets/images/icon_next.png',
                           width: 14,
                           height: 14,
+                          tintInLight: true,
+                          tintInDark: true,
                         ),
                       ],
                     ),
@@ -272,24 +277,28 @@ class _CloudSettingPageState extends State<CloudSettingPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       '代理模式',
                       style: TextStyle(
                         fontSize: 15,
-                        color: CloudColors.white,
+                        color: CloudColors.textPrimary(context),
                       ),
                     ),
                     Row(
                       children: [
                         Text(
                           'mode.value',
-                          style: const TextStyle(
-                              color: CloudColors.white, fontSize: 14),
+                          style: TextStyle(
+                            color: CloudColors.textPrimary(context),
+                            fontSize: 14,
+                          ),
                         ),
-                        Image.asset(
+                        const CloudThemeAsset(
                           'assets/images/icon_next.png',
                           width: 14,
                           height: 14,
+                          tintInLight: true,
+                          tintInDark: true,
                         ),
                       ],
                     ),
@@ -306,24 +315,28 @@ class _CloudSettingPageState extends State<CloudSettingPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       '日志等级',
                       style: TextStyle(
                         fontSize: 15,
-                        color: CloudColors.white,
+                        color: CloudColors.textPrimary(context),
                       ),
                     ),
                     Row(
                       children: [
                         Text(
                          ' logLevel.value.toUpperCase()',
-                          style: const TextStyle(
-                              color: CloudColors.white, fontSize: 14),
+                          style: TextStyle(
+                            color: CloudColors.textPrimary(context),
+                            fontSize: 14,
+                          ),
                         ),
-                        Image.asset(
+                        const CloudThemeAsset(
                           'assets/images/icon_next.png',
                           width: 14,
                           height: 14,
+                          tintInLight: true,
+                          tintInDark: true,
                         ),
                       ],
                     ),
@@ -340,24 +353,28 @@ class _CloudSettingPageState extends State<CloudSettingPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       '版本号',
                       style: TextStyle(
                         fontSize: 15,
-                        color: CloudColors.white,
+                        color: CloudColors.textPrimary(context),
                       ),
                     ),
                     Row(
                       children: [
                         Text(
                           _version,
-                          style: const TextStyle(
-                              color: CloudColors.white, fontSize: 14),
+                          style: TextStyle(
+                            color: CloudColors.textPrimary(context),
+                            fontSize: 14,
+                          ),
                         ),
-                        Image.asset(
+                        const CloudThemeAsset(
                           'assets/images/icon_next.png',
                           width: 14,
                           height: 14,
+                          tintInLight: true,
+                          tintInDark: true,
                         ),
                       ],
                     ),
@@ -389,20 +406,20 @@ class _CloudSettingPageState extends State<CloudSettingPage> {
                 width: 200,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(25),
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                     colors: [
-                      CloudColors.c3257FF,
-                      CloudColors.c24D4F3,
+                      CloudColors.brandPrimary(context),
+                      CloudColors.brandSecondary(context),
                     ],
                   ),
                 ),
-                child: const Center(
+                child: Center(
                   child: Text(
                     '退出登录',
                     style: TextStyle(
-                      color: CloudColors.white,
+                      color: CloudColors.textOnPrimary(context),
                       fontSize: 15,
                     ),
                   ),

@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'package:desktop_webview_window/desktop_webview_window.dart';
 import 'package:dio/dio.dart';
+import 'package:fl_clash/zhuiyun/cloud_model/cloud_goods_pay_method.dart' as pm;
 import 'package:fl_clash/zhuiyun/cloud_model/cloud_order_model.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_colors.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_request.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_toast.dart';
 import 'package:fl_clash/zhuiyun/cloud_vip/cloud_pay/cloud_pay_page.dart';
+import 'package:fl_clash/zhuiyun/cloud_vip/cloud_pay_failed/cloud_pay_failed.dart';
 import 'package:fl_clash/zhuiyun/cloud_vip/cloud_pay_succeed/cloud_pay_succeed.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -20,6 +22,9 @@ class CloudOrderPage extends StatefulWidget {
 class _CloudVipPageState extends State<CloudOrderPage> {
   var _list = <Data>[];
   String _paymethodID = '';
+  List<pm.Data> _payMethods = [];
+  bool _loading = true;
+  bool _submitting = false;
 
   @override
   void initState() {
@@ -37,29 +42,37 @@ class _CloudVipPageState extends State<CloudOrderPage> {
       CloudToast.hideLoading(context);
 
       if (m.status == 'success') {
+        if (!mounted) return;
         setState(() {
           _list = m.data ?? [];
+          _loading = false;
         });
       } else {
         CloudToast.show(m.error.toString(), context);
+        if (!mounted) return;
+        setState(() => _loading = false);
       }
     }).catchError((e) {
       CloudToast.hideLoading(context);
 
-      DioException error = e;
-      var map = error.response?.data ?? {'message': '数据异常'};
-      CloudToast.show(map['message'].toString(), context);
+      CloudToast.show(CloudRequest.errorMessage(e), context);
+      if (!mounted) return;
+      setState(() => _loading = false);
     });
   }
 
   _getGoodsPayMethod() {
     CloudRequest().getPayMethod().then((m) async {
-      var list = m.data?.toList();
-      _paymethodID = '${list?.last.id}';
+      final list = m.data?.toList() ?? <pm.Data>[];
+      if (!mounted) return;
+      setState(() {
+        _payMethods = list;
+        if (list.isNotEmpty) {
+          _paymethodID = '${list.last.id}';
+        }
+      });
     }).catchError((e) {
-      final DioException error = e;
-      final map = error.response?.data ?? {'message': '数据异常'};
-      CloudToast.show(map['message'].toString(), context);
+      CloudToast.show(CloudRequest.errorMessage(e), context);
     });
   }
 
@@ -72,10 +85,40 @@ class _CloudVipPageState extends State<CloudOrderPage> {
       appBar: AppBar(
         title: const Text('我的订单'),
       ),
-      body: ListView(
-        children: List.generate(_list.length, (index) {
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _list.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.receipt_long_outlined,
+                        size: 42,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '暂无订单',
+                        style: theme.textTheme.bodyLarge,
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
+                  itemCount: _list.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (_, index) {
           Data data = _list[index];
           return Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(
+                color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+              ),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(10),
               child: Column(
@@ -149,15 +192,15 @@ class _CloudVipPageState extends State<CloudOrderPage> {
                               borderRadius: BorderRadius.circular(17),
                               color: CloudColors.transparent,
                               border: Border.all(
-                                color: CloudColors.cA4ADBD,
-                                width: 0.5,
+                                color: theme.colorScheme.outline,
+                                width: 0.8,
                               ),
                             ),
-                            child: const Text(
+                            child: Text(
                               '取消',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: CloudColors.cA4ADBD,
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ),
@@ -167,7 +210,9 @@ class _CloudVipPageState extends State<CloudOrderPage> {
                         ),
                         GestureDetector(
                           behavior: HitTestBehavior.translucent,
-                          onTap: () => _getPayUrl(data.tradeNo ?? ''),
+                          onTap: _submitting
+                              ? null
+                              : () => _showPayMethodSheet(data.tradeNo ?? ''),
                           child: Container(
                             width: 100,
                             height: 34,
@@ -175,13 +220,13 @@ class _CloudVipPageState extends State<CloudOrderPage> {
                             margin: const EdgeInsets.only(top: 12, bottom: 20),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(17),
-                              color: CloudColors.c3257FF,
+                              color: theme.colorScheme.primary,
                             ),
-                            child: const Text(
+                            child: Text(
                               '付款',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: CloudColors.white,
+                                color: theme.colorScheme.onPrimary,
                               ),
                             ),
                           ),
@@ -192,8 +237,8 @@ class _CloudVipPageState extends State<CloudOrderPage> {
               ),
             ),
           );
-        }),
-      ),
+        },
+                ),
     );
   }
 
@@ -217,8 +262,11 @@ class _CloudVipPageState extends State<CloudOrderPage> {
   }
 
   void _cancelOrder(String tradeNo) {
+    if (_submitting) return;
+    _submitting = true;
     if (tradeNo.isEmpty) {
       CloudToast.show('订单不存在', context);
+      _submitting = false;
       return;
     }
     CloudToast.loading(context);
@@ -230,23 +278,80 @@ class _CloudVipPageState extends State<CloudOrderPage> {
       } else {
         CloudToast.show('订单取消失败', context);
       }
+      _submitting = false;
     }).catchError((e) {
       CloudToast.hideLoading(context);
-      DioException error = e;
-      var map = error.response?.data ?? {'message': '数据异常'};
-      CloudToast.show(map['message'].toString(), context);
+      CloudToast.show(CloudRequest.errorMessage(e), context);
+      _submitting = false;
     });
   }
 
-  void _getPayUrl(String tradeNo) {
+  void _showPayMethodSheet(String tradeNo) {
     if (tradeNo.isEmpty) {
       CloudToast.show('订单不存在', context);
       return;
     }
-    // var loading = Loading.builder();
-    // Asuka.addOverlay(loading);
+    if (_payMethods.isEmpty) {
+      _getPayUrl(tradeNo);
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      builder: (_) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '选择支付方式',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _payMethods.map((m) {
+                    final id = '${m.id ?? ''}';
+                    return ChoiceChip(
+                      label: Text(m.name ?? '支付'),
+                      selected: _paymethodID == id,
+                      onSelected: (_) => setState(() => _paymethodID = id),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _getPayUrl(tradeNo);
+                    },
+                    child: const Text('去支付'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _getPayUrl(String tradeNo) {
+    if (_submitting) return;
+    _submitting = true;
+    if (tradeNo.isEmpty) {
+      CloudToast.show('订单不存在', context);
+      _submitting = false;
+      return;
+    }
+    CloudToast.loading(context);
     CloudRequest().getPayUrl(tradeNo, _paymethodID).then((m) async {
-      // loading.remove();
+      CloudToast.hideLoading(context);
       if (m.type == -1) {
         if (m.data != null) {
           Navigator.push(
@@ -275,6 +380,15 @@ class _CloudVipPageState extends State<CloudOrderPage> {
                   builder: (context) => const CloudPaySucceedPage(),
                 ),
               );
+            } else if (url.contains('trade_status=TRADE_FAILED') ||
+                url.contains('trade_status=TRADE_CLOSED')) {
+              webView.close();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CloudPayFailedPage(),
+                ),
+              );
             }
           });
           webView.launch(m.data.toString());
@@ -288,23 +402,24 @@ class _CloudVipPageState extends State<CloudOrderPage> {
           );
         }
       }
+      _submitting = false;
     }).catchError((e) {
-      DioException error = e;
-      var map = error.response?.data ?? {'message': '数据异常'};
-      CloudToast.show(map['message'].toString(), context);
+      CloudToast.hideLoading(context);
+      CloudToast.show(CloudRequest.errorMessage(e), context);
+      _submitting = false;
     });
   }
 
   Widget _statusWidget(num status, BuildContext context) {
     if (status == 0) {
-      return const Text(
+      return Text(
         '待支付',
-        style: TextStyle(fontSize: 14, color: CloudColors.c3257FF),
+        style: TextStyle(fontSize: 14, color: CloudColors.brandPrimary(context)),
       );
     } else if (status == 2) {
-      return const Text(
+      return Text(
         '已取消',
-        style: TextStyle(fontSize: 14, color: CloudColors.c5E6690),
+        style: TextStyle(fontSize: 14, color: CloudColors.muted(context)),
       );
     } else {
       return const Text(

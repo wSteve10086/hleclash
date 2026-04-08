@@ -26,6 +26,7 @@ import '../zhuiyun/cloud_login/cloud_login_page.dart';
 import '../zhuiyun/cloud_mine/cloud_invite/cloud_invite_page.dart';
 import '../zhuiyun/cloud_mine/cloud_order/cloud_order_page.dart';
 import '../zhuiyun/cloud_model/CloudVersionStorage.dart';
+import '../zhuiyun/cloud_model/cloud_version_model.dart';
 import '../zhuiyun/cloud_update/cloud_download_webpage.dart';
 import '../zhuiyun/cloud_utils/cloud_colors.dart';
 import '../zhuiyun/cloud_utils/cloud_login_state.dart';
@@ -54,6 +55,38 @@ class ToolsView extends ConsumerStatefulWidget {
 
 class _ToolViewState extends ConsumerState<ToolsView> {
   late String currentVersion = "1.0.0";
+
+  String _cloudPlatformDownloadUrl(Data? data) {
+    if (data == null) return '';
+    if (Platform.isAndroid) return data.updateAddress_android ?? '';
+    if (Platform.isIOS) return data.updateAddress_ios ?? '';
+    if (Platform.isMacOS) return data.updateAddress_mac ?? '';
+    if (Platform.isWindows) return data.updateAddress_windows ?? '';
+    return data.updateAddress ?? '';
+  }
+
+  bool _cloudRemoteVersionIsNewer(String currentVersion, String? remoteRaw) {
+    if (remoteRaw == null || remoteRaw.isEmpty) return false;
+    final remote = remoteRaw.trim().replaceFirst(RegExp(r'^v'), '');
+    final current = currentVersion.trim().replaceFirst(RegExp(r'^v'), '');
+    try {
+      return _compareVersions(current, remote) < 0;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  int _compareVersions(String current, String remote) {
+    final c = current.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    final r = remote.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    final maxLen = c.length > r.length ? c.length : r.length;
+    for (var i = 0; i < maxLen; i++) {
+      final cv = i < c.length ? c[i] : 0;
+      final rv = i < r.length ? r[i] : 0;
+      if (cv != rv) return cv.compareTo(rv);
+    }
+    return 0;
+  }
 
   Widget _buildNavigationMenuItem(NavigationItem navigationItem) {
     return ListItem.open(
@@ -127,9 +160,9 @@ class _ToolViewState extends ConsumerState<ToolsView> {
 
   List<Widget> _getOtherList(bool enableDeveloperMode) {
     final value = CloudVersionStorage.instance.model;
-    var newVersion = value?.data?.version;
+    final newVersion = value?.data?.version;
     var alertmsg = '';
-    if (newVersion != currentVersion && value?.data?.forcedFlag == 1) {
+    if (_cloudRemoteVersionIsNewer(currentVersion, newVersion)) {
       alertmsg = "发现新版本 v$newVersion（当前 v$currentVersion）";
     }
     return generateSection(
@@ -179,9 +212,11 @@ class _ToolViewState extends ConsumerState<ToolsView> {
 
             final navigationItems =
                 ref.read(navigationStateProvider).navigationItems;
-            globalState.appController.toPage(
-              navigationItems[0].label,
-            );
+            if (navigationItems.isNotEmpty) {
+              globalState.appController.toPage(
+                navigationItems[0].label,
+              );
+            }
 
             if (!context.mounted) return;
             Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
@@ -267,47 +302,59 @@ class _ToolViewState extends ConsumerState<ToolsView> {
   }
 
   void _checkUpdate() async {
-    PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    var version = packageInfo.version;
-    // CloudRequest().getVersionInfo().then((value) async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    final localVersion = packageInfo.version;
     final value = CloudVersionStorage.instance.model;
-    if (version != value?.data?.version && value?.data?.forcedFlag == 1) {
-      var vList = value?.data?.versionIntroduction?.split('\n') ?? [];
-      String downloadUrl = '';
-      if (Platform.isAndroid) {
-        downloadUrl = value?.data?.updateAddress_android ?? '';
-      } else if (Platform.isIOS) {
-        downloadUrl = value?.data?.updateAddress_ios ?? '';
-      } else if (Platform.isMacOS) {
-        downloadUrl = value?.data?.updateAddress_mac ?? '';
-      } else if (Platform.isWindows) {
-        downloadUrl = value?.data?.updateAddress_windows ?? '';
-      }
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) =>
-              UpdateDownloadPage(
-                version: version, updateLogs: vList, downloadUrl: downloadUrl,),
-        ),
-      );
-      // _cloudDialog('版本更新', vList, downloadUrl);
-    } else {
+    final data = value?.data;
+    if (!_cloudRemoteVersionIsNewer(localVersion, data?.version)) {
       CloudToast.show('已是最新版本', context);
+      return;
+    }
+    final flag = data?.forcedFlag;
+    final vList = data?.versionIntroduction?.split('\n') ?? [];
+    final downloadUrl = _cloudPlatformDownloadUrl(data);
+    final remoteVersion = data?.version ?? localVersion;
+
+    if (flag == 2) {
+      _cloudDialog(
+        '版本更新',
+        vList,
+        downloadUrl,
+        localVersion: localVersion,
+        remoteVersion: remoteVersion,
+        isForceUpdate: true,
+      );
+      return;
     }
 
-    // }).catchError((e) {
-    //   CloudToast.show('已是最新版本', context);
-    //
-    // });
+    _cloudDialog(
+      '有新版本啦',
+      vList,
+      downloadUrl,
+      localVersion: localVersion,
+      remoteVersion: remoteVersion,
+      isForceUpdate: false,
+    );
   }
 
-  void _cloudDialog(String title, List<String> vList, String downloadUrl) {
+  void _cloudDialog(
+    String title,
+    List<String> vList,
+    String downloadUrl, {
+    required String localVersion,
+    required String remoteVersion,
+    bool isForceUpdate = false,
+  }) {
+    final packageInfoVersion = localVersion;
     showDialog(
-        context: context,
-        builder: (BuildContext c) {
-          return StatefulBuilder(
-              builder: (BuildContext ctx, StateSetter updateState) => Center(
+      context: context,
+      barrierDismissible: !isForceUpdate,
+      builder: (BuildContext c) {
+        return PopScope(
+          canPop: !isForceUpdate,
+          child: StatefulBuilder(
+            builder: (BuildContext ctx, StateSetter updateState) {
+              return Center(
                 child: Container(
                   height: 310,
                   margin: const EdgeInsets.all(18),
@@ -317,10 +364,7 @@ class _ToolViewState extends ConsumerState<ToolsView> {
                     gradient: const LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [
-                        CloudColors.c40455D,
-                        CloudColors.c242738,
-                      ],
+                      colors: [CloudColors.c40455D, CloudColors.c242738],
                     ),
                   ),
                   child: Column(
@@ -333,6 +377,14 @@ class _ToolViewState extends ConsumerState<ToolsView> {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '最新版本：$remoteVersion  当前版本：$localVersion',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: CloudColors.cA4ADBD,
+                        ),
+                      ),
                       Container(
                         height: 160,
                         margin: const EdgeInsets.symmetric(vertical: 20),
@@ -340,76 +392,139 @@ class _ToolViewState extends ConsumerState<ToolsView> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: List.generate(
-                                vList.length,
-                                    (index) => Text(
-                                  vList[index],
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: CloudColors.white,
-                                  ),
-                                )),
+                              vList.length,
+                              (index) => Text(
+                                vList[index],
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: CloudColors.white,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                      // GestureDetector(
-                      //   behavior: HitTestBehavior.translucent,
-                      //   onTap: () async {
-                      //     if (downloadUrl.isEmpty) {
-                      //       Navigator.of(c).pop();
-                      //       return;
-                      //     }
-                      //
-                      //     //  CloudToast.loading( context);
-                      //     OtaUpdate()
-                      //         .execute(downloadUrl,
-                      //         destinationFilename: 'last.apk')
-                      //         .listen(
-                      //           (OtaEvent event) {
-                      //         if (event.status == OtaStatus.DOWNLOADING) {
-                      //           _btnTitle = '已下载${event.value}%';
-                      //         }
-                      //         if (event.status == OtaStatus.INSTALLING) {
-                      //           _btnTitle = '安装中...';
-                      //         }
-                      //         updateState(() {});
-                      //
-                      //         if (event.status != OtaStatus.DOWNLOADING) {
-                      //           // CloudToast.hideLoading( context);
-                      //           Navigator.of(c).pop();
-                      //         }
-                      //       },
-                      //     );
-                      //   },
-                      //   child: Container(
-                      //     height: 44,
-                      //     width: 230,
-                      //     decoration: BoxDecoration(
-                      //       borderRadius: BorderRadius.circular(22),
-                      //       gradient: const LinearGradient(
-                      //         begin: Alignment.centerLeft,
-                      //         end: Alignment.centerRight,
-                      //         colors: [
-                      //           CloudColors.c63483D,
-                      //           CloudColors.cBA987A,
-                      //         ],
-                      //       ),
-                      //     ),
-                      //     child: Center(
-                      //       child: Text(
-                      //         title == '版本更新' ? _btnTitle : '我知道了',
-                      //         style: const TextStyle(
-                      //           color: CloudColors.white,
-                      //           fontSize: 15,
-                      //         ),
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ),
+                      if (!isForceUpdate)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.translucent,
+                                onTap: () => Navigator.of(c).pop(),
+                                child: Container(
+                                  height: 44,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(22),
+                                    border:
+                                        Border.all(color: CloudColors.cA4ADBD),
+                                  ),
+                                  child: const Text(
+                                    '稍后再说',
+                                    style: TextStyle(
+                                      color: CloudColors.white,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.translucent,
+                                onTap: () async {
+                                  if (downloadUrl.isEmpty) {
+                                    CloudToast.show('更新地址异常，请联系客服处理', context);
+                                    return;
+                                  }
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => UpdateDownloadPage(
+                                        version: packageInfoVersion,
+                                        updateLogs: vList,
+                                        downloadUrl: downloadUrl,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  height: 44,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(22),
+                                    gradient: const LinearGradient(
+                                      begin: Alignment.centerLeft,
+                                      end: Alignment.centerRight,
+                                      colors: [
+                                        CloudColors.c63483D,
+                                        CloudColors.cBA987A,
+                                      ],
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    '立即更新',
+                                    style: TextStyle(
+                                      color: CloudColors.white,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      else
+                        GestureDetector(
+                          behavior: HitTestBehavior.translucent,
+                          onTap: () async {
+                            if (downloadUrl.isEmpty) {
+                              CloudToast.show('更新地址异常，请联系客服处理', context);
+                              return;
+                            }
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => UpdateDownloadPage(
+                                  version: packageInfoVersion,
+                                  updateLogs: vList,
+                                  downloadUrl: downloadUrl,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            height: 44,
+                            width: 230,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(22),
+                              gradient: const LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: [CloudColors.c63483D, CloudColors.cBA987A],
+                              ),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                '立即更新',
+                                style: TextStyle(
+                                  color: CloudColors.white,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
-              ));
-        });
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 
   @override

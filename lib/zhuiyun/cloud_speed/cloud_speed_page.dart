@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:dio/dio.dart';
 import 'package:fl_clash/gen/assets.gen.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_colors.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_request.dart';
+import 'package:fl_clash/zhuiyun/cloud_utils/cloud_theme_asset.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -97,9 +97,7 @@ class _CloudSpeedPageState extends State<CloudSpeedPage>
                 : (value.data?.transferEnable ?? 1));
       });
     }).catchError((e) {
-      DioException error = e  ;
-      var map = error.response?.data ?? {'message': '订阅异常'};
-      CloudToast.show(map['message'].toString(), context);
+      CloudToast.show(CloudRequest.errorMessage(e, fallback: '订阅异常'), context);
     });
   }
 
@@ -189,10 +187,10 @@ class _CloudSpeedPageState extends State<CloudSpeedPage>
                   alignment: Alignment.centerLeft,
                   child: Text(
                     _planName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: CloudColors.white,
+                      color: CloudColors.textPrimary(context),
                     ),
                   ),
                 ),
@@ -203,9 +201,9 @@ class _CloudSpeedPageState extends State<CloudSpeedPage>
                   alignment: Alignment.centerLeft,
                   child: Text(
                     '到期时间: $_expiredAt',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: CloudColors.white,
+                      color: CloudColors.textPrimary(context),
                     ),
                   ),
                 ),
@@ -216,8 +214,8 @@ class _CloudSpeedPageState extends State<CloudSpeedPage>
                   alignment: Alignment.centerLeft,
                   child: Text(
                     '已使用 $_transfer / 总流量 $_allTransfer',
-                    style: const TextStyle(
-                      color: CloudColors.white,
+                    style: TextStyle(
+                      color: CloudColors.textPrimary(context),
                       fontSize: 14,
                     ),
                   ),
@@ -233,7 +231,7 @@ class _CloudSpeedPageState extends State<CloudSpeedPage>
                         height: 5,
                         width: MediaQuery.of(context).size.width - 72.0,
                         decoration: BoxDecoration(
-                          color: CloudColors.white,
+                          color: CloudColors.border(context).withOpacity(0.45),
                           borderRadius: BorderRadius.circular(2.5),
                         ),
                       ),
@@ -242,7 +240,7 @@ class _CloudSpeedPageState extends State<CloudSpeedPage>
                         width: (MediaQuery.of(context).size.width - 72.0) *
                             _progress,
                         decoration: BoxDecoration(
-                          color: CloudColors.c2D79FB,
+                          color: CloudColors.brandPrimary(context),
                           borderRadius: BorderRadius.circular(5),
                         ),
                       ),
@@ -320,7 +318,7 @@ class _CloudSpeedPageState extends State<CloudSpeedPage>
                               }
                             }));
                   },
-                  child: Image.asset(
+                  child: CloudThemeAsset(
                     idOpen ? Assets.images.iconStart.path :Assets.images.iconStop.path  ,
                     width: 55,
                     height: 55,
@@ -331,10 +329,10 @@ class _CloudSpeedPageState extends State<CloudSpeedPage>
           ),
           Text(
             _timeText,
-            style: const TextStyle(
+            style: TextStyle(
                 fontWeight: FontWeight.w500,
                 fontSize: 40,
-                color: CloudColors.white),
+                color: CloudColors.textPrimary(context)),
           ),
           // Text(
           //   idOpen ? '已连接' : '未连接',
@@ -349,9 +347,9 @@ class _CloudSpeedPageState extends State<CloudSpeedPage>
             child: Text(
               // '代理模式：${_core.clash.mode?.value ?? Mode.Rule.value}',
               '代理模式： ',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: CloudColors.cA4ADBD,
+                color: CloudColors.muted(context),
               ),
             ),
           ),
@@ -394,11 +392,12 @@ class _CloudSpeedPageState extends State<CloudSpeedPage>
                       const SizedBox(
                         width: 23,
                       ),
-                      Image.asset(
+                      CloudThemeAsset(
 
                         Assets.images.iconLocation.path,
                         width: 20,
                         height: 20,
+                        tintInLight: true,
                       ),
                       const SizedBox(
                         width: 8,
@@ -409,9 +408,9 @@ class _CloudSpeedPageState extends State<CloudSpeedPage>
                           _groupNow,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
-                            color: CloudColors.white,
+                            color: CloudColors.textPrimary(context),
                           ),
                         ),
                       ),
@@ -419,10 +418,11 @@ class _CloudSpeedPageState extends State<CloudSpeedPage>
                   ),
                   Padding(
                     padding: const EdgeInsets.only(right: 20.0),
-                    child: Image.asset(
+                    child: CloudThemeAsset(
                       Assets.images.iconSelect.path,
                       width: 20,
                       height: 20,
+                      tintInLight: true,
                     ),
                   ),
                 ],
