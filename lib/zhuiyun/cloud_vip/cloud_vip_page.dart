@@ -25,6 +25,7 @@ class _CloudVipPageState extends ConsumerState<CloudVipPage> {
   List<Data> _priceList = [];
 
   bool _loading = false;
+  bool _showFullEmail = false;
 
   @override
   void initState() {
@@ -153,14 +154,41 @@ class _CloudVipPageState extends ConsumerState<CloudVipPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    getEmail(vip.email),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                  Row(
+                                    children: [
+                                      Flexible(
+                                        fit: FlexFit.loose,
+                                        child: Text(
+                                          _showFullEmail
+                                              ? vip.email
+                                              : getEmail(vip.email),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
+                                        onTap: () {
+                                          setState(() {
+                                            _showFullEmail = !_showFullEmail;
+                                          });
+                                        },
+                                        child: Icon(
+                                          _showFullEmail
+                                              ? Icons.visibility_off_outlined
+                                              : Icons.visibility_outlined,
+                                          size: 16,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
