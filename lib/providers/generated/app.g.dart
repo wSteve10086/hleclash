@@ -1715,3 +1715,56 @@ abstract class _$SelectedItem extends $Notifier<String> {
     element.handleValue(ref, created);
   }
 }
+
+@ProviderFor(NetworkDetection)
+const networkDetectionProvider = NetworkDetectionProvider._();
+
+final class NetworkDetectionProvider
+    extends $NotifierProvider<NetworkDetection, NetworkDetectionState> {
+  const NetworkDetectionProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'networkDetectionProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$networkDetectionHash();
+
+  @$internal
+  @override
+  NetworkDetection create() => NetworkDetection();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(NetworkDetectionState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<NetworkDetectionState>(value),
+    );
+  }
+}
+
+String _$networkDetectionHash() => r'71525360f8754a07f12de1146ac266d37d9c7ad4';
+
+abstract class _$NetworkDetection extends $Notifier<NetworkDetectionState> {
+  NetworkDetectionState build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<NetworkDetectionState, NetworkDetectionState>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<NetworkDetectionState, NetworkDetectionState>,
+              NetworkDetectionState,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}

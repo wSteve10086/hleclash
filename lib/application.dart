@@ -11,6 +11,7 @@ import 'package:fl_clash/providers/providers.dart';
 import 'package:fl_clash/state.dart';
 import 'package:fl_clash/zhuiyun/cloud_login/cloud_login_page.dart';
 import 'package:fl_clash/zhuiyun/cloud_utils/cloud_login_state.dart';
+import 'package:fl_clash/zhuiyun/cloud_utils/cloud_version_update.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -57,6 +58,9 @@ class ApplicationState extends ConsumerState<Application> {
       await globalState.appController.init();
       globalState.appController.initLink();
       app?.initShortcuts();
+      Future<void>.delayed(const Duration(seconds: 2), () {
+        unawaited(CloudVersionUpdate.checkAndPrompt());
+      });
     });
   }
 

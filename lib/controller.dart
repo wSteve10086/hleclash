@@ -47,6 +47,18 @@ class AppController {
     });
   }
 
+  void tryCheckIp() {
+    final isTimeout = _ref.read(
+      networkDetectionProvider.select(
+        (state) => state.ipInfo == null && state.isLoading == false,
+      ),
+    );
+    if (!isTimeout) {
+      return;
+    }
+    _ref.read(checkIpNumProvider.notifier).add();
+  }
+
   void applyProfileDebounce({bool silence = false}) {
     debouncer.call(FunctionTag.applyProfile, (silence) {
       applyProfile(silence: silence);

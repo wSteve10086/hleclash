@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dio/dio.dart';
 import 'package:fl_clash/common/common.dart';
 import 'package:fl_clash/enum/enum.dart';
 import 'package:fl_clash/models/models.dart';
@@ -497,5 +498,74 @@ class SelectedItem extends _$SelectedItem with AutoDisposeNotifierMixin {
     globalState.appState = globalState.appState.copyWith(
       selectedItemMap: newMap,
     );
+  }
+}
+
+@Riverpod(keepAlive: true)
+class NetworkDetection extends _$NetworkDetection
+    with AutoDisposeNotifierMixin {
+  bool? _preIsStart;
+  CancelToken? _cancelToken;
+  int _startMillisecondsEpoch = 0;
+  Timer? _setTimeoutTimer;
+
+  @override
+  NetworkDetectionState build() {
+    return const NetworkDetectionState(isLoading: true, ipInfo: null);
+  }
+
+  void startCheck() {
+    debouncer.call(
+      FunctionTag.checkIp,
+      _checkIp,
+      duration: commonDuration,
+    );
+  }
+
+  void tryStartCheck() {
+    if (state.isLoading == false && state.ipInfo == null) {
+      startCheck();
+    }
+  }
+
+  Future<void> _checkIp() async {
+    final isInit = ref.read(initProvider);
+    if (!isInit) {
+      return;
+    }
+    final isStart = globalState.appState.runTime != null;
+    if (!isStart && _preIsStart == false && state.ipInfo != null) {
+      return;
+    }
+    final startId = DateTime.now().millisecondsSinceEpoch;
+    _startMillisecondsEpoch = startId;
+    _cancelToken?.cancel();
+    _cancelToken = CancelToken();
+    _clearSetTimeoutTimer();
+    state = state.copyWith(isLoading: true, ipInfo: null);
+    _preIsStart = isStart;
+    commonPrint.log('checkIp start');
+    final res = await request.checkIp(cancelToken: _cancelToken);
+    commonPrint.log('checkIp res: $res');
+    if (_startMillisecondsEpoch != startId) {
+      return;
+    }
+    if (res.isError) {
+      state = state.copyWith(isLoading: true, ipInfo: null);
+      return;
+    }
+    final ipInfo = res.data;
+    if (ipInfo != null) {
+      state = state.copyWith(isLoading: false, ipInfo: ipInfo);
+      return;
+    }
+    _setTimeoutTimer = Timer(const Duration(milliseconds: 300), () {
+      state = state.copyWith(isLoading: false, ipInfo: null);
+    });
+  }
+
+  void _clearSetTimeoutTimer() {
+    _setTimeoutTimer?.cancel();
+    _setTimeoutTimer = null;
   }
 }

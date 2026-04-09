@@ -68,6 +68,7 @@ class Request {
 
   Future<Result<IpInfo?>> checkIp({CancelToken? cancelToken}) async {
     var failureCount = 0;
+    final token = cancelToken ?? CancelToken();
     final futures = _ipInfoSources.entries.map((source) async {
       final Completer<Result<IpInfo?>> completer = Completer();
       handleFailRes() {
@@ -79,14 +80,19 @@ class Request {
       final future = dio
           .get<Map<String, dynamic>>(
             source.key,
-            cancelToken: cancelToken,
+            cancelToken: token,
             options: Options(responseType: ResponseType.json),
           )
           .timeout(const Duration(seconds: 10));
       future
           .then((res) {
             if (res.statusCode == HttpStatus.ok && res.data != null) {
-              completer.complete(Result.success(source.value(res.data!)));
+              try {
+                completer.complete(Result.success(source.value(res.data!)));
+              } catch (_) {
+                failureCount++;
+                handleFailRes();
+              }
               return;
             }
             failureCount++;
@@ -102,7 +108,7 @@ class Request {
       return completer.future;
     });
     final res = await Future.any(futures);
-    cancelToken?.cancel();
+    token.cancel();
     return res;
   }
 

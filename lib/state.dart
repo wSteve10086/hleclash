@@ -5,7 +5,6 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:animations/animations.dart';
-import 'package:dio/dio.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:fl_clash/common/theme.dart';
 import 'package:fl_clash/core/core.dart';
@@ -658,78 +657,3 @@ class GlobalState {
 }
 
 final globalState = GlobalState();
-
-class DetectionState {
-  static DetectionState? _instance;
-  bool? _preIsStart;
-  Timer? _setTimeoutTimer;
-  CancelToken? cancelToken;
-
-  final state = ValueNotifier<NetworkDetectionState>(
-    const NetworkDetectionState(isLoading: true, ipInfo: null),
-  );
-
-  DetectionState._internal();
-
-  factory DetectionState() {
-    _instance ??= DetectionState._internal();
-    return _instance!;
-  }
-
-  void startCheck() {
-    debouncer.call(
-      FunctionTag.checkIp,
-      _checkIp,
-      duration: Duration(milliseconds: 1200),
-    );
-  }
-
-  void tryStartCheck() {
-    if (state.value.isLoading == false && state.value.ipInfo == null) {
-      startCheck();
-    }
-  }
-
-  Future<void> _checkIp() async {
-    final appState = globalState.appState;
-    final isInit = appState.isInit;
-    if (!isInit) return;
-    final isStart = appState.runTime != null;
-    if (_preIsStart == false &&
-        _preIsStart == isStart &&
-        state.value.ipInfo != null) {
-      return;
-    }
-    _clearSetTimeoutTimer();
-    state.value = state.value.copyWith(isLoading: true, ipInfo: null);
-    _preIsStart = isStart;
-    if (cancelToken != null) {
-      cancelToken!.cancel();
-      cancelToken = null;
-    }
-    cancelToken = CancelToken();
-    final res = await request.checkIp(cancelToken: cancelToken);
-    if (res.isError) {
-      state.value = state.value.copyWith(isLoading: true, ipInfo: null);
-      return;
-    }
-    final ipInfo = res.data;
-    if (ipInfo != null) {
-      state.value = state.value.copyWith(isLoading: false, ipInfo: ipInfo);
-      return;
-    }
-    _clearSetTimeoutTimer();
-    _setTimeoutTimer = Timer(const Duration(milliseconds: 300), () {
-      state.value = state.value.copyWith(isLoading: false, ipInfo: null);
-    });
-  }
-
-  void _clearSetTimeoutTimer() {
-    if (_setTimeoutTimer != null) {
-      _setTimeoutTimer?.cancel();
-      _setTimeoutTimer = null;
-    }
-  }
-}
-
-final detectionState = DetectionState();

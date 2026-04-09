@@ -32,8 +32,8 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
       });
     });
     ref.listenManual(checkIpProvider, (prev, next) {
-      if (prev != next && next.b) {
-        detectionState.startCheck();
+      if (prev != next && next.a && next.c) {
+        ref.read(networkDetectionProvider.notifier).startCheck();
       }
     }, fireImmediately: true);
     ref.listenManual(configStateProvider, (prev, next) {
@@ -75,7 +75,7 @@ class _AppStateManagerState extends ConsumerState<AppStateManager>
     }
     if (state == AppLifecycleState.resumed) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        detectionState.tryStartCheck();
+        globalState.appController.tryCheckIp();
       });
       if (system.isAndroid) {
         globalState.appController.tryStartCore();

@@ -560,7 +560,8 @@ VM2? layoutChange(Ref ref) {
 }
 
 @riverpod
-VM2<int, bool> checkIp(Ref ref) {
+VM3<bool, int, bool> checkIp(Ref ref) {
+  final isInit = ref.watch(initProvider);
   final checkIpNum = ref.watch(checkIpNumProvider);
   final containsDetection = ref.watch(
     dashboardStateProvider.select(
@@ -568,7 +569,7 @@ VM2<int, bool> checkIp(Ref ref) {
           state.dashboardWidgets.contains(DashboardWidget.networkDetection),
     ),
   );
-  return VM2(a: checkIpNum, b: containsDetection);
+  return VM3(a: isInit, b: checkIpNum, c: containsDetection);
 }
 
 @riverpod
